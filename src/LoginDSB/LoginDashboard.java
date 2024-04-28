@@ -4,6 +4,7 @@ import AdminDSB.*;
 import Config.*;
 import RegDSB.*;
 import UserDSB.*;
+import java.security.NoSuchAlgorithmException;
 import java.sql.*;
 import javax.swing.*;
 
@@ -13,32 +14,33 @@ public class LoginDashboard extends javax.swing.JFrame {
         initComponents();
     }
 
-    public static String loginDB(String user, String pass) {
-        try (Connection cn = new DBConnector().getConnection()) {
-            PreparedStatement checkStmt = cn.prepareStatement("SELECT * FROM inventory WHERE (user = ? AND pass = ?) AND (type = 'ADMIN' OR type = 'USER')");
-            checkStmt.setString(1, user);
-            checkStmt.setString(2, pass);
-            ResultSet resultSet = checkStmt.executeQuery();
+    private static String xstatus, xtype;
 
-            if (resultSet.next()) {
-                String status = resultSet.getString("status");
-                if (status.equals("ACTIVE")) {
-                    String userType = resultSet.getString("type");
-                    return userType;
-                } else if (status.equals("PENDING")) {
-                    return "PENDING";
-                } else if (status.equals("DECLINED")) {
-                    return "DECLINED";
-                } else {
-                    return "INACTIVE"; 
-                }
-            } else {
-                return null;
-            }
-        } catch (SQLException er) {
-            System.out.println("ERROR: " + er.getMessage());
-            return null;
+    private boolean loginDB(String email, String pass) throws SQLException {
+        ResultSet rs = new DBConnector().getData("select * from inventory where email = '" + email + "' and password = '" + pass + "'");
+        if (rs.next()) {
+            xstatus = rs.getString("status");
+            xtype = rs.getString("type");
+            Session cons = Session.getInstance();
+            cons.setId(rs.getString("id"));
+            cons.setEmail(rs.getString("email"));
+            cons.setUsername(rs.getString("username"));
+            cons.setPassword(rs.getString("password"));
+            cons.setContact(rs.getString("contact"));
+            cons.setType(rs.getString("type"));
+            cons.setStatus(rs.getString("status"));
+            return true;
+        } else {
+            return false;
         }
+    }
+
+    private void errorMessage(String message) {
+        JOptionPane.showMessageDialog(this, message, "ERROR!", JOptionPane.ERROR_MESSAGE);
+    }
+
+    private void successMessage(String message) {
+        JOptionPane.showMessageDialog(this, message, "SUCCESS!", JOptionPane.INFORMATION_MESSAGE);
     }
 
     @SuppressWarnings("unchecked")
@@ -69,7 +71,7 @@ public class LoginDashboard extends javax.swing.JFrame {
         username.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
         username.setForeground(new java.awt.Color(102, 102, 102));
         username.setHorizontalAlignment(javax.swing.JTextField.CENTER);
-        username.setText("USERNAME");
+        username.setText("EMAIL");
         username.addFocusListener(new java.awt.event.FocusAdapter() {
             public void focusGained(java.awt.event.FocusEvent evt) {
                 usernameFocusGained(evt);
@@ -148,30 +150,37 @@ public class LoginDashboard extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
+        try {
+            String hashedPass = passwordHashing.hashPassword(password.getText());
+            if (loginDB(username.getText(), hashedPass)) {
 
-        String userType = loginDB(username.getText(), password.getText());
-
-        if (userType != null) {
-            if (userType.equals("PENDING")) {
-                JOptionPane.showMessageDialog(null, "PLEASE WAIT FOR THE ADMIN APPROVAL!", "ERROR!", JOptionPane.ERROR_MESSAGE);
-            } else if (userType.equals("DECLINED")) {
-                JOptionPane.showMessageDialog(null, "YOUR ACCOUNT HAS BEEN DECLINED!", "ERROR!", JOptionPane.ERROR_MESSAGE);
-            } else {
-
-                JOptionPane.showMessageDialog(this, "LOGIN SUCCESSFUL!");
-
-                if (userType.equalsIgnoreCase("ADMIN")) {
-                    new AdminDashboard(username.getText()).setVisible(true);
-                    dispose();
-                } else if (userType.equalsIgnoreCase("USER")) {
-                    new UserDashboard(username.getText()).setVisible(true);
-                    dispose();
+                if (xstatus.equalsIgnoreCase("pending")) {
+                    errorMessage("WAIT FOR ADMIN APPROVAL!");
+                } else if (xstatus.equalsIgnoreCase("declined")) {
+                    errorMessage("YOUR ACCOUNT HAS BEEN DECLINED!");
+                } else if (xstatus.equalsIgnoreCase("inactive")) {
+                    errorMessage("YOUR ACCOUNT IS IN-ACTIVE!");
+                } else if (!xstatus.equalsIgnoreCase("active")) {
+                    errorMessage("INVALID TYPE!");
+                } else {
+                    if (xtype.equalsIgnoreCase("user")) {
+                        successMessage("LOGIN SUCCESSFULLY!");
+                        new UserDashboard().setVisible(true);
+                        dispose();
+                    } else if (xtype.equalsIgnoreCase("admin")) {
+                        successMessage("LOGIN SUCCESSFULLY!");
+                        new AdminDashboard().setVisible(true);
+                        dispose();
+                    } else {
+                        errorMessage("ACCOUNT TYPE INVALID!");
+                    }
                 }
+            } else {
+                errorMessage("ACCOUNT NOT FOUND!");
             }
-        } else {
-            JOptionPane.showMessageDialog(this, "ACCOUNT NOT FOUND!");
+        } catch (SQLException | NoSuchAlgorithmException er) {
+            System.out.println("ERROR: " + er.getMessage());
         }
-
     }//GEN-LAST:event_jButton3ActionPerformed
 
     private void passwordFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_passwordFocusGained
@@ -179,7 +188,6 @@ public class LoginDashboard extends javax.swing.JFrame {
     }//GEN-LAST:event_passwordFocusGained
 
     private void showPassActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_showPassActionPerformed
-
         if (showPass.isSelected()) {
             password.setEchoChar((char) 0);
         } else {
@@ -222,6 +230,6 @@ public class LoginDashboard extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPasswordField password;
     private javax.swing.JCheckBox showPass;
-    private javax.swing.JTextField username;
+    public javax.swing.JTextField username;
     // End of variables declaration//GEN-END:variables
 }

@@ -1,12 +1,5 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package AdminDSB;
 
-import static AdminDSB.AdminDashboard.data;
-import static AdminDSB.AdminDashboard.updateData;
 import Config.DBConnector;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -14,102 +7,63 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableModel;
+import net.proteanit.sql.DbUtils;
 
 public class pendingAccounts extends javax.swing.JFrame {
 
     public pendingAccounts() {
         initComponents();
-        pendingData();
+        displayData();
     }
 
-    public void pendingData() {
+    private void displayData() {
         try {
-            String query = "SELECT * FROM inventory WHERE status = 'PENDING'";
-            ResultSet rs = new DBConnector().getData(query);
-            while (rs.next()) {
-                String xid = String.valueOf(rs.getInt("id"));
-                String xemail = rs.getString("email");
-                String xcontact = rs.getString("contact");
-                String xusername = rs.getString("user");
-                String xpassword = rs.getString("pass");
-                String xtype = rs.getString("type");
-                String xstatus = rs.getString("status");
-
-                String tbData[] = {xid, xemail, xcontact, xusername, xpassword, xtype, xstatus};
-                DefaultTableModel tblModel = (DefaultTableModel) pendings.getModel();
-                tblModel.addRow(tbData);
-            }
-        } catch (SQLException er) {
-            System.out.println("ERROR: " + er.getMessage());
+            ResultSet rs = new DBConnector().getData("select id,email,username,type from inventory where status = 'PENDING'");
+            pendings.setModel(DbUtils.resultSetToTableModel(rs));
+        } catch (SQLException e) {
+            System.err.println("An error occurred while fetching data: " + e.getMessage());
         }
     }
 
-    public void acceptAccount() {
-        try (Connection cn = new DBConnector().getConnection()) {
-            DefaultTableModel tblModel = (DefaultTableModel) pendings.getModel();
-
-            if (pendings.getSelectedRowCount() == 1) {
-                int selectedRowIndex = pendings.getSelectedRow();
-                String accountId = (String) pendings.getValueAt(selectedRowIndex, 0);
-
-                PreparedStatement update = cn.prepareStatement("UPDATE inventory SET status = ? WHERE id = ?");
-                update.setString(1, "ACTIVE");
-                update.setString(2, accountId);
-
-                int rowsAffected = update.executeUpdate();
-
-                if (rowsAffected > 0) {
-                    JOptionPane.showMessageDialog(null, "ACCOUNT HAS BEEN APPROVED SUCCESSFULLY!", "SUCCESS!", JOptionPane.INFORMATION_MESSAGE);
-                    tblModel.setRowCount(0);
-                    pendingData();
-                } else {
-                    JOptionPane.showMessageDialog(null, "FAILED TO APPROVED!", "ERROR!", JOptionPane.ERROR_MESSAGE);
-                }
-
-            } else {
-                if (pendings.getRowCount() == 0) {
-                    JOptionPane.showMessageDialog(null, "TABLE IS EMPTY!", "ERROR!", JOptionPane.ERROR_MESSAGE);
-                } else {
-                    JOptionPane.showMessageDialog(null, "PLEASE SELECT A SINGLE ROW TO UPDATE!", "ERROR!", JOptionPane.ERROR_MESSAGE);
-                }
+    private void acceptAccount() {
+        int rowIndex = pendings.getSelectedRow();
+        if (rowIndex < 0) {
+            errorMessage("PLEASE SELECT AN INDEX!");
+        } else {
+            try {
+                TableModel tbl = pendings.getModel();
+                new DBConnector().updateData("UPDATE inventory SET status = 'ACTIVE' WHERE id = '" + tbl.getValueAt(rowIndex, 0).toString() + "'");
+                successMessage("ACCOUNT APPROVED SUCCESSFULLY!!");
+                displayData();
+            } catch (SQLException er) {
+                System.out.println("ERROR: " + er.getMessage());
             }
-        } catch (SQLException er) {
-            System.out.println("ERROR: " + er.getMessage());
         }
     }
 
-    public void declineAccount() {
-        try (Connection cn = new DBConnector().getConnection()) {
-            DefaultTableModel tblModel = (DefaultTableModel) pendings.getModel();
-
-            if (pendings.getSelectedRowCount() == 1) {
-                int selectedRowIndex = pendings.getSelectedRow();
-                String accountId = (String) pendings.getValueAt(selectedRowIndex, 0);
-
-                PreparedStatement update = cn.prepareStatement("UPDATE inventory SET status = ? WHERE id = ?");
-                update.setString(1, "DECLINED");
-                update.setString(2, accountId);
-
-                int rowsAffected = update.executeUpdate();
-
-                if (rowsAffected > 0) {
-                    JOptionPane.showMessageDialog(null, "ACCOUNT HAS BEEN DECLINED!", "SUCCESS!", JOptionPane.INFORMATION_MESSAGE);
-                    tblModel.setRowCount(0);
-                    pendingData();
-                } else {
-                    JOptionPane.showMessageDialog(null, "FAILED TO DECLINE!", "ERROR!", JOptionPane.ERROR_MESSAGE);
-                }
-
-            } else {
-                if (pendings.getRowCount() == 0) {
-                    JOptionPane.showMessageDialog(null, "TABLE IS EMPTY!", "ERROR!", JOptionPane.ERROR_MESSAGE);
-                } else {
-                    JOptionPane.showMessageDialog(null, "PLEASE SELECT A SINGLE ROW TO UPDATE!", "ERROR!", JOptionPane.ERROR_MESSAGE);
-                }
+    private void declineAccount() {
+        int rowIndex = pendings.getSelectedRow();
+        if (rowIndex < 0) {
+            errorMessage("PLEASE SELECT AN INDEX!");
+        } else {
+            try {
+                TableModel tbl = pendings.getModel();
+                new DBConnector().updateData("UPDATE inventory SET status = 'DECLINED' WHERE id = '" + tbl.getValueAt(rowIndex, 0).toString() + "'");
+                successMessage("ACCOUNT HAS BEEN DISAPPROVED!");
+                displayData();
+            } catch (SQLException er) {
+                System.out.println("ERROR: " + er.getMessage());
             }
-        } catch (SQLException er) {
-            System.out.println("ERROR: " + er.getMessage());
         }
+    }
+
+    private void errorMessage(String message) {
+        JOptionPane.showMessageDialog(this, message, "ERROR!", JOptionPane.ERROR_MESSAGE);
+    }
+
+    private void successMessage(String message) {
+        JOptionPane.showMessageDialog(this, message, "SUCCESS!", JOptionPane.INFORMATION_MESSAGE);
     }
 
     @SuppressWarnings("unchecked")
@@ -207,10 +161,8 @@ public class pendingAccounts extends javax.swing.JFrame {
     }//GEN-LAST:event_pendingsMouseClicked
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-
         new AdminDashboard().setVisible(true);
         dispose();
-
     }//GEN-LAST:event_jButton2ActionPerformed
 
     private void acceptBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_acceptBtnActionPerformed

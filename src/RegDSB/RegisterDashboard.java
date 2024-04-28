@@ -2,8 +2,11 @@ package RegDSB;
 
 import Config.*;
 import LoginDSB.*;
+import java.security.NoSuchAlgorithmException;
 import java.sql.*;
 import javax.swing.*;
+import static javax.swing.JOptionPane.ERROR_MESSAGE;
+import static javax.swing.JOptionPane.INFORMATION_MESSAGE;
 
 public class RegisterDashboard extends javax.swing.JFrame {
 
@@ -11,56 +14,48 @@ public class RegisterDashboard extends javax.swing.JFrame {
         initComponents();
     }
 
-    public static boolean registerAccount(String user, String pass, String email, String contact, String type) {
-        try (Connection cn = new DBConnector().getConnection()) {
+    private String xemail, xusername;
 
-            if (!email.matches("^[a-zA-Z0-9._%+-]+@gmail\\.com$")) {
-                JOptionPane.showMessageDialog(null, "INVALID GMAIL ADDRESS!", "ERROR!", JOptionPane.ERROR_MESSAGE);
-                return false;
+    private boolean duplicateChecker() throws SQLException {
+        ResultSet rs = new DBConnector().getData("select * from inventory where email = '" + email.getText() + "' or username = '" + username.getText() + "'");
+
+        if (rs.next()) {
+            xemail = rs.getString("email");
+            if (xemail.equals(email.getText())) {
+                JOptionPane.showMessageDialog(this, "EMAIL HAS BEEN USED!", "OH NO!", ERROR_MESSAGE);
             }
 
-            if (!contact.matches("09\\d{9}")) {
-                JOptionPane.showMessageDialog(null, "CONTACT NUMBER MUST BE 11 DIGITS STARTING WITH 09!", "ERROR!", JOptionPane.ERROR_MESSAGE);
-                return false;
+            xusername = rs.getString("username");
+            if (xusername.equals(username.getText())) {
+                JOptionPane.showMessageDialog(this, "USERNAME HAS BEEN USED!", "OH NO!", ERROR_MESSAGE);
             }
-
-            if (!pass.matches("^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!])(?=\\S+$).{8,}$")) {
-                JOptionPane.showMessageDialog(null, "PASSWORD MUST BE AT LEAST 8 CHARACTERS LONG AND CONTAIN AT LEAST ONE DIGIT, ONE LOWERCASE LETTER, ONE UPPERCASE LETTER, ONE SPECIAL CHARACTER, AND NO WHITESPACES!", "ERROR!", JOptionPane.ERROR_MESSAGE);
-                return false;
-            }
-
-            PreparedStatement checker = cn.prepareStatement("SELECT COUNT(*) FROM inventory WHERE email = ? OR user = ? OR contact = ?");
-            checker.setString(1, email);
-            checker.setString(2, user);
-            checker.setString(3, contact);
-            ResultSet rs = checker.executeQuery();
-            rs.next();
-            int count = rs.getInt(1);
-
-            if (count > 0) {
-                JOptionPane.showMessageDialog(null, "ACCOUNT DUPLICATED!", "ERROR!", JOptionPane.ERROR_MESSAGE);
-                return false;
-            }
-
-            cn.setAutoCommit(false);
-
-            PreparedStatement insert = cn.prepareStatement("INSERT INTO inventory (email, contact, user, pass, type, status) VALUES (?, ?, ?, ?, ?, 'PENDING')");
-            insert.setString(1, email);
-            insert.setString(2, contact);
-            insert.setString(3, user);
-            insert.setString(4, pass);
-            insert.setString(5, type);
-            int rows = insert.executeUpdate();
-
-            cn.commit();
-
-            JOptionPane.showMessageDialog(null, "ACCOUNT SUCCESSFULLY CREATED!", "SUCCESS!", JOptionPane.INFORMATION_MESSAGE);
-            return rows > 0;
-
-        } catch (SQLException er) {
-            System.out.println("ERROR: " + er.getMessage());
+            return true;
+        } else {
             return false;
         }
+    }
+
+    private boolean validationChecker() {
+        if (username.getText().isEmpty() || password.getText().isEmpty() || email.getText().isEmpty() || contact.getText().isEmpty()) {
+            errorMessage("FILL ALL THE REQUIREMENTS!");
+            return false;
+        } else if (password.getText().length() < 8) {
+            errorMessage("PASSWORD MUST BE AT LEAST 8 CHARACTERS!");
+            return false;
+        } else if (!contact.getText().matches("\\d+")) {
+            errorMessage("CONTACT MUST CONTAIN ONLY DIGITS!");
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    private void errorMessage(String message) {
+        JOptionPane.showMessageDialog(this, message, "ERROR!", JOptionPane.ERROR_MESSAGE);
+    }
+
+    private void successMessage(String message) {
+        JOptionPane.showMessageDialog(this, message, "SUCCESS!", JOptionPane.INFORMATION_MESSAGE);
     }
 
     @SuppressWarnings("unchecked")
@@ -72,12 +67,13 @@ public class RegisterDashboard extends javax.swing.JFrame {
         jButton2 = new javax.swing.JButton();
         jButton1 = new javax.swing.JButton();
         contact = new javax.swing.JTextField();
-        password = new javax.swing.JTextField();
         username = new javax.swing.JTextField();
         email = new javax.swing.JTextField();
         jLabel5 = new javax.swing.JLabel();
         jLabel9 = new javax.swing.JLabel();
-        endUser = new javax.swing.JComboBox<>();
+        type = new javax.swing.JComboBox<>();
+        password = new javax.swing.JPasswordField();
+        showPass = new javax.swing.JCheckBox();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setMinimumSize(new java.awt.Dimension(440, 536));
@@ -119,16 +115,6 @@ public class RegisterDashboard extends javax.swing.JFrame {
         });
         jPanel1.add(contact, new org.netbeans.lib.awtextra.AbsoluteConstraints(100, 280, 240, -1));
 
-        password.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
-        password.setHorizontalAlignment(javax.swing.JTextField.CENTER);
-        password.setText("PASSWORD");
-        password.addFocusListener(new java.awt.event.FocusAdapter() {
-            public void focusGained(java.awt.event.FocusEvent evt) {
-                passwordFocusGained(evt);
-            }
-        });
-        jPanel1.add(password, new org.netbeans.lib.awtextra.AbsoluteConstraints(100, 240, 240, -1));
-
         username.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
         username.setHorizontalAlignment(javax.swing.JTextField.CENTER);
         username.setText("USERNAME");
@@ -158,14 +144,36 @@ public class RegisterDashboard extends javax.swing.JFrame {
         jLabel9.setText("MAKE SURE TO DOUBLE CHECK YOUR INFORMATION");
         jPanel1.add(jLabel9, new org.netbeans.lib.awtextra.AbsoluteConstraints(80, 100, -1, -1));
 
-        endUser.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
-        endUser.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "ADMIN", "USER" }));
-        endUser.addActionListener(new java.awt.event.ActionListener() {
+        type.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
+        type.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "ADMIN", "USER" }));
+        type.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                endUserActionPerformed(evt);
+                typeActionPerformed(evt);
             }
         });
-        jPanel1.add(endUser, new org.netbeans.lib.awtextra.AbsoluteConstraints(240, 330, 100, -1));
+        jPanel1.add(type, new org.netbeans.lib.awtextra.AbsoluteConstraints(100, 320, 240, -1));
+
+        password.setForeground(new java.awt.Color(102, 102, 102));
+        password.setHorizontalAlignment(javax.swing.JTextField.CENTER);
+        password.setText("PASSWORD");
+        password.setMinimumSize(new java.awt.Dimension(43, 25));
+        password.setPreferredSize(new java.awt.Dimension(43, 25));
+        password.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                passwordFocusGained(evt);
+            }
+        });
+        jPanel1.add(password, new org.netbeans.lib.awtextra.AbsoluteConstraints(100, 240, 240, 30));
+
+        showPass.setBackground(new java.awt.Color(255, 255, 255));
+        showPass.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
+        showPass.setText("SHOW PASSWORD");
+        showPass.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                showPassActionPerformed(evt);
+            }
+        });
+        jPanel1.add(showPass, new org.netbeans.lib.awtextra.AbsoluteConstraints(220, 360, -1, -1));
 
         getContentPane().add(jPanel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 440, 540));
 
@@ -186,34 +194,45 @@ public class RegisterDashboard extends javax.swing.JFrame {
         username.setText("");
     }//GEN-LAST:event_usernameFocusGained
 
-    private void passwordFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_passwordFocusGained
-        password.setText("");
-    }//GEN-LAST:event_passwordFocusGained
-
     private void contactFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_contactFocusGained
         contact.setText("");
     }//GEN-LAST:event_contactFocusGained
 
-    private void endUserActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_endUserActionPerformed
+    private void typeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_typeActionPerformed
         // TODO add your handling code here:
-    }//GEN-LAST:event_endUserActionPerformed
+    }//GEN-LAST:event_typeActionPerformed
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+        try {
+            if (duplicateChecker()) {
+            } else if (!validationChecker()) {
+            } else {
+                String pass = passwordHashing.hashPassword(password.getText());
+                new DBConnector().insertData("insert into inventory (email,username,password,contact,type,status) "
+                        + "values ('" + email.getText() + "','" + username.getText() + "', '" + pass + "'"
+                        + ",'" + contact.getText() + "','" + type.getSelectedItem() + "','PENDING')");
 
-        String selectedUserType = endUser.getSelectedItem().toString();
+                JOptionPane.showMessageDialog(this, "REGISTRATION SUCCESSFULL!", "SUCCESS", INFORMATION_MESSAGE);
 
-        if (registerAccount(username.getText(), password.getText(), email.getText(), contact.getText(), selectedUserType)) {
+                new LoginDashboard().setVisible(true);
+                dispose();
 
-            JOptionPane.showMessageDialog(this, "LOGIN SUCCESSFULLY!", "SUCCESS!", JOptionPane.INFORMATION_MESSAGE);
-            new LoginDashboard().setVisible(true);
-            dispose();
-
-        } else {
-            JOptionPane.showMessageDialog(this, "INVALID USERNAME, PASSWORD, OR ACCOUNT IS INACTIVE!", "ERROR!", JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (SQLException er) {
+            System.out.println("Eror: " + er.getMessage());
+        } catch (NoSuchAlgorithmException ex) {
+            System.out.println("Error: " + ex.getMessage());
         }
-
-
     }//GEN-LAST:event_jButton2ActionPerformed
+
+    private void passwordFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_passwordFocusGained
+        password.setText("");
+    }//GEN-LAST:event_passwordFocusGained
+
+    private void showPassActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_showPassActionPerformed
+        char echoChar = showPass.isSelected() ? (char) 0 : '*';
+        password.setEchoChar(echoChar);
+    }//GEN-LAST:event_showPassActionPerformed
 
     public static void main(String args[]) {
 
@@ -227,14 +246,15 @@ public class RegisterDashboard extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTextField contact;
     private javax.swing.JTextField email;
-    private javax.swing.JComboBox<String> endUser;
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel9;
     private javax.swing.JPanel jPanel1;
-    private javax.swing.JTextField password;
+    private javax.swing.JPasswordField password;
+    private javax.swing.JCheckBox showPass;
+    private javax.swing.JComboBox<String> type;
     private javax.swing.JTextField username;
     // End of variables declaration//GEN-END:variables
 }
