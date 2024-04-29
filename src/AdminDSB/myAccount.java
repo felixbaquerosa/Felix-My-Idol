@@ -161,6 +161,7 @@ public class myAccount extends javax.swing.JFrame {
         });
         jPanel3.add(contact, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 190, 240, 30));
 
+        id.setEditable(false);
         id.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
         id.setHorizontalAlignment(javax.swing.JTextField.CENTER);
         id.setText("ID");

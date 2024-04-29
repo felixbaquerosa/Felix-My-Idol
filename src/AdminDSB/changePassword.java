@@ -51,7 +51,6 @@ public class changePassword extends javax.swing.JFrame {
         jButton2 = new javax.swing.JButton();
         jButton1 = new javax.swing.JButton();
         jLabel17 = new javax.swing.JLabel();
-        id = new javax.swing.JTextField();
         cpassword = new javax.swing.JPasswordField();
         oldPassword = new javax.swing.JPasswordField();
         newPassword = new javax.swing.JPasswordField();
@@ -92,16 +91,6 @@ public class changePassword extends javax.swing.JFrame {
         jLabel17.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Images/eidt.png"))); // NOI18N
         jLabel17.setText("CHANGE PASS");
         jPanel3.add(jLabel17, new org.netbeans.lib.awtextra.AbsoluteConstraints(70, 50, 190, 40));
-
-        id.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
-        id.setHorizontalAlignment(javax.swing.JTextField.CENTER);
-        id.setText("ID");
-        id.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                idMouseClicked(evt);
-            }
-        });
-        jPanel3.add(id, new org.netbeans.lib.awtextra.AbsoluteConstraints(110, 310, 90, 30));
 
         cpassword.setHorizontalAlignment(javax.swing.JTextField.CENTER);
         cpassword.setText("CONFIRM PASS");
@@ -166,9 +155,6 @@ public class changePassword extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_jButton2ActionPerformed
 
-    private void idMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_idMouseClicked
-    }//GEN-LAST:event_idMouseClicked
-
     private void showPassActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_showPassActionPerformed
         char echoChar = showPass.isSelected() ? (char) 0 : '*';
         oldPassword.setEchoChar(echoChar);
@@ -187,7 +173,6 @@ public class changePassword extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JPasswordField cpassword;
-    public javax.swing.JTextField id;
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
     private javax.swing.JLabel jLabel15;

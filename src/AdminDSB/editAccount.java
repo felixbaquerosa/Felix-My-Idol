@@ -162,6 +162,7 @@ public class editAccount extends javax.swing.JFrame {
         jLabel16.setText("PLEASE DOUBLE CHECK DETAILS UPON CONFIRMING!");
         jPanel3.add(jLabel16, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 70, 290, 40));
 
+        id.setEditable(false);
         id.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
         id.setHorizontalAlignment(javax.swing.JTextField.CENTER);
         id.setText("ID");
