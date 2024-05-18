@@ -125,11 +125,6 @@ public class RegisterDashboard extends javax.swing.JFrame {
             contact.setText("");
             icon.setIcon(null);
 
-            username.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
-            email.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
-            password.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
-            contact.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
-
         } catch (SQLException | IOException ex) {
             JOptionPane.showMessageDialog(this, "Error creating account!");
             System.out.println(ex.getMessage());

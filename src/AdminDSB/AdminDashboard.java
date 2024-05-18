@@ -2,20 +2,34 @@ package AdminDSB;
 
 import Config.*;
 import LoginDSB.*;
+import java.awt.Image;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.security.NoSuchAlgorithmException;
 import java.sql.*;
-import javax.swing.*;
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.table.*;
 import net.proteanit.sql.DbUtils;
 
 public class AdminDashboard extends javax.swing.JFrame {
 
-    DefaultTableModel adminTable;
+    public File selectedFile;
+    public String path2 = null;
+    public String destination = "";
+    public String oldPath;
+    public String path;
 
     public AdminDashboard() {
         initComponents();
         displayUsers();
         displayProducts();
+        jButton21.setEnabled(false);
     }
 
     private void displayUsers() {
@@ -30,7 +44,6 @@ public class AdminDashboard extends javax.swing.JFrame {
 
     private void displayProducts() {
         try {
-            Session sess = Session.getInstance();
             ResultSet rs = new DBConnector().getData("select * from products");
             productsTB.setModel(DbUtils.resultSetToTableModel(rs));
         } catch (SQLException e) {
@@ -38,12 +51,81 @@ public class AdminDashboard extends javax.swing.JFrame {
         }
     }
 
-    private void errorMessage(String message) {
-        JOptionPane.showMessageDialog(this, message, "ERROR!", JOptionPane.ERROR_MESSAGE);
+    public void createAccount() throws NoSuchAlgorithmException {
+
+        try {
+
+            DBConnector cn = new DBConnector();
+            cn.insertData("insert into products (p_name,p_price,p_stocks,p_status,p_image) "
+                    + "values ('" + pname1.getText() + "', '" + pprice.getText() + "', "
+                    + "'" + pstocks.getText() + "', '" + pstatus.getSelectedItem() + "', '" + destination + "')");
+
+            Files.copy(selectedFile.toPath(), new File(destination).toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+            JOptionPane.showMessageDialog(this, "ACCOUNT CREATED SUCCESSFULLY!");
+
+            LoginDashboard ld = new LoginDashboard();
+            ld.setVisible(true);
+            this.dispose();
+
+            pname1.setText("");
+            pprice.setText("");
+            pstocks.setText("");
+            icon.setIcon(null);
+
+        } catch (SQLException | IOException ex) {
+            JOptionPane.showMessageDialog(this, "Error creating account!");
+            System.out.println(ex.getMessage());
+        }
     }
 
-    private void successMessage(String message) {
-        JOptionPane.showMessageDialog(this, message, "SUCCESS!", JOptionPane.INFORMATION_MESSAGE);
+    public static int getHeightFromWidth(String imagePath, int desiredWidth) {
+        try {
+            File imageFile = new File(imagePath);
+            BufferedImage image = ImageIO.read(imageFile);
+
+            int originalWidth = image.getWidth();
+            int originalHeight = image.getHeight();
+
+            int newHeight = (int) ((double) desiredWidth / originalWidth * originalHeight);
+
+            return newHeight;
+        } catch (IOException ex) {
+            System.out.println("No image found!");
+        }
+
+        return -1;
+    }
+
+    private ImageIcon ResizeImage(String ImagePath, byte[] pic, JLabel label) {
+        ImageIcon MyImage = null;
+        if (ImagePath != null) {
+            MyImage = new ImageIcon(ImagePath);
+        } else {
+            MyImage = new ImageIcon(pic);
+        }
+
+        int newHeight = getHeightFromWidth(ImagePath, label.getWidth());
+
+        Image img = MyImage.getImage();
+        Image newImg = img.getScaledInstance(label.getWidth(), newHeight, Image.SCALE_SMOOTH);
+        ImageIcon image = new ImageIcon(newImg);
+        return image;
+    }
+
+    private int FileExistenceChecker(String path) {
+        File file = new File(path);
+        String fileName = file.getName();
+
+        Path filePath = Paths.get("src/ProductsImage", fileName);
+        boolean fileExists = Files.exists(filePath);
+
+        if (fileExists) {
+            return 1;
+        } else {
+            return 0;
+        }
+
     }
 
     @SuppressWarnings("unchecked")
@@ -90,6 +172,29 @@ public class AdminDashboard extends javax.swing.JFrame {
         jButton16 = new javax.swing.JButton();
         jButton17 = new javax.swing.JButton();
         jButton18 = new javax.swing.JButton();
+        jPanel4 = new javax.swing.JPanel();
+        jScrollPane4 = new javax.swing.JScrollPane();
+        productsTB1 = new javax.swing.JTable();
+        jLabel5 = new javax.swing.JLabel();
+        aname3 = new javax.swing.JLabel();
+        jButton14 = new javax.swing.JButton();
+        jLabel10 = new javax.swing.JLabel();
+        jButton20 = new javax.swing.JButton();
+        jButton21 = new javax.swing.JButton();
+        jButton23 = new javax.swing.JButton();
+        jLabel11 = new javax.swing.JLabel();
+        pname1 = new javax.swing.JTextField();
+        jLabel12 = new javax.swing.JLabel();
+        pprice1 = new javax.swing.JTextField();
+        jLabel13 = new javax.swing.JLabel();
+        pstocks1 = new javax.swing.JTextField();
+        jLabel14 = new javax.swing.JLabel();
+        pstatus1 = new javax.swing.JComboBox<>();
+        jPanel5 = new javax.swing.JPanel();
+        icon1 = new javax.swing.JLabel();
+        jButton24 = new javax.swing.JButton();
+        jButton22 = new javax.swing.JButton();
+        jButton25 = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setMinimumSize(new java.awt.Dimension(1098, 699));
@@ -365,6 +470,147 @@ public class AdminDashboard extends javax.swing.JFrame {
 
         jTabbedPane1.addTab("tab1", jPanel3);
 
+        jPanel4.setBackground(new java.awt.Color(255, 255, 255));
+        jPanel4.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        productsTB1.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+
+            },
+            new String [] {
+
+            }
+        ));
+        productsTB1.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                productsTB1MouseClicked(evt);
+            }
+        });
+        jScrollPane4.setViewportView(productsTB1);
+
+        jPanel4.add(jScrollPane4, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 180, 570, 470));
+
+        jLabel5.setFont(new java.awt.Font("Tahoma", 0, 15)); // NOI18N
+        jLabel5.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jLabel5.setText("Product Name");
+        jPanel4.add(jLabel5, new org.netbeans.lib.awtextra.AbsoluteConstraints(613, 160, 220, -1));
+
+        aname3.setFont(new java.awt.Font("Yu Gothic", 1, 18)); // NOI18N
+        aname3.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Images/icons8-admin-80.png"))); // NOI18N
+        aname3.setText("ADMINS NAME");
+        jPanel4.add(aname3, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 40, 230, -1));
+
+        jButton14.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
+        jButton14.setText("PRINT");
+        jButton14.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton14ActionPerformed(evt);
+            }
+        });
+        jPanel4.add(jButton14, new org.netbeans.lib.awtextra.AbsoluteConstraints(470, 140, 130, -1));
+
+        jLabel10.setFont(new java.awt.Font("Yu Gothic", 1, 18)); // NOI18N
+        jLabel10.setText("ADMINS DASHBOARD");
+        jPanel4.add(jLabel10, new org.netbeans.lib.awtextra.AbsoluteConstraints(520, 90, 210, 30));
+
+        jButton20.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
+        jButton20.setText("MANAGE USERS");
+        jButton20.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton20ActionPerformed(evt);
+            }
+        });
+        jPanel4.add(jButton20, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 140, 130, -1));
+
+        jButton21.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
+        jButton21.setText("REMOVE");
+        jButton21.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton21ActionPerformed(evt);
+            }
+        });
+        jPanel4.add(jButton21, new org.netbeans.lib.awtextra.AbsoluteConstraints(920, 540, 160, -1));
+
+        jButton23.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
+        jButton23.setText("LOGOUT");
+        jButton23.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton23ActionPerformed(evt);
+            }
+        });
+        jPanel4.add(jButton23, new org.netbeans.lib.awtextra.AbsoluteConstraints(970, 10, 110, -1));
+
+        jLabel11.setFont(new java.awt.Font("Yu Gothic", 1, 18)); // NOI18N
+        jLabel11.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Images/samot.png"))); // NOI18N
+        jLabel11.setText("ADMINS DASHBOARD");
+        jPanel4.add(jLabel11, new org.netbeans.lib.awtextra.AbsoluteConstraints(310, 30, 470, 150));
+
+        pname1.setHorizontalAlignment(javax.swing.JTextField.CENTER);
+        pname1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                pname1ActionPerformed(evt);
+            }
+        });
+        jPanel4.add(pname1, new org.netbeans.lib.awtextra.AbsoluteConstraints(610, 180, 230, 30));
+
+        jLabel12.setFont(new java.awt.Font("Tahoma", 0, 15)); // NOI18N
+        jLabel12.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jLabel12.setText("Product Price");
+        jPanel4.add(jLabel12, new org.netbeans.lib.awtextra.AbsoluteConstraints(850, 160, 220, -1));
+
+        pprice1.setHorizontalAlignment(javax.swing.JTextField.CENTER);
+        jPanel4.add(pprice1, new org.netbeans.lib.awtextra.AbsoluteConstraints(850, 180, 230, 30));
+
+        jLabel13.setFont(new java.awt.Font("Tahoma", 0, 15)); // NOI18N
+        jLabel13.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jLabel13.setText("Product Stocks");
+        jPanel4.add(jLabel13, new org.netbeans.lib.awtextra.AbsoluteConstraints(610, 230, 220, -1));
+
+        pstocks1.setHorizontalAlignment(javax.swing.JTextField.CENTER);
+        jPanel4.add(pstocks1, new org.netbeans.lib.awtextra.AbsoluteConstraints(610, 250, 230, 30));
+
+        jLabel14.setFont(new java.awt.Font("Tahoma", 0, 15)); // NOI18N
+        jLabel14.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jLabel14.setText("Product Status");
+        jPanel4.add(jLabel14, new org.netbeans.lib.awtextra.AbsoluteConstraints(850, 230, 220, -1));
+
+        pstatus1.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "AVAILABLE", "NOT AVAILABLE" }));
+        jPanel4.add(pstatus1, new org.netbeans.lib.awtextra.AbsoluteConstraints(850, 250, 230, 30));
+
+        jPanel5.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+        jPanel5.add(icon1, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 10, 450, 200));
+
+        jPanel4.add(jPanel5, new org.netbeans.lib.awtextra.AbsoluteConstraints(610, 310, 470, 220));
+
+        jButton24.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
+        jButton24.setText("SELECT");
+        jButton24.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton24ActionPerformed(evt);
+            }
+        });
+        jPanel4.add(jButton24, new org.netbeans.lib.awtextra.AbsoluteConstraints(610, 540, 170, -1));
+
+        jButton22.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
+        jButton22.setText("BACK");
+        jButton22.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton22ActionPerformed(evt);
+            }
+        });
+        jPanel4.add(jButton22, new org.netbeans.lib.awtextra.AbsoluteConstraints(970, 618, 110, -1));
+
+        jButton25.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
+        jButton25.setText("ADD");
+        jButton25.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton25ActionPerformed(evt);
+            }
+        });
+        jPanel4.add(jButton25, new org.netbeans.lib.awtextra.AbsoluteConstraints(610, 618, 110, -1));
+
+        jTabbedPane1.addTab("tab1", jPanel4);
+
         getContentPane().add(jTabbedPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 1100, 700));
 
         pack();
@@ -372,8 +618,9 @@ public class AdminDashboard extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        new LoginDashboard().setVisible(true);
-        dispose();
+        LoginDashboard ld = new LoginDashboard();
+        ld.setVisible(true);
+        this.dispose();
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void jButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton5ActionPerformed
@@ -384,7 +631,7 @@ public class AdminDashboard extends javax.swing.JFrame {
     private void jButton9ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton9ActionPerformed
         int rowIndex = usersTB.getSelectedRow();
         if (rowIndex < 0) {
-            errorMessage("PLEASE SELECT AN INDEX!");
+            JOptionPane.showMessageDialog(null, "PLEASE SELECT AN INDEX!");
         } else {
             try {
                 TableModel tbl = usersTB.getModel();
@@ -453,13 +700,33 @@ public class AdminDashboard extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton8ActionPerformed
 
     private void jButton15ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton15ActionPerformed
-        // TODO add your handling code here:
+        JFileChooser fileChooser = new JFileChooser();
+        int returnValue = fileChooser.showOpenDialog(null);
+        if (returnValue == JFileChooser.APPROVE_OPTION) {
+            try {
+                selectedFile = fileChooser.getSelectedFile();
+                destination = "src/ProductsImage/" + selectedFile.getName();
+                path = selectedFile.getAbsolutePath();
+
+                if (FileExistenceChecker(path) == 1) {
+                    JOptionPane.showMessageDialog(null, "File Already Exist, Rename or Choose another!");
+                    destination = "";
+                    path = "";
+                } else {
+                    icon.setIcon(ResizeImage(path, null, icon));
+                    jButton21.setEnabled(true);
+                    jButton24.setEnabled(false);
+                }
+            } catch (Exception ex) {
+                System.out.println("File Error!");
+            }
+        }
     }//GEN-LAST:event_jButton15ActionPerformed
 
     private void productsTBMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_productsTBMouseClicked
         int rowIndex = productsTB.getSelectedRow();
         if (rowIndex < 0) {
-            errorMessage("PLEASE SELECT AN INDEX!");
+            JOptionPane.showMessageDialog(null, "PLEASE SELECT AN INDEX!");
         } else {
             try {
                 TableModel tbl = productsTB.getModel();
@@ -489,12 +756,73 @@ public class AdminDashboard extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton16ActionPerformed
 
     private void jButton17ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton17ActionPerformed
-        // TODO add your handling code here:
+        jTabbedPane1.setSelectedIndex(2);
     }//GEN-LAST:event_jButton17ActionPerformed
 
     private void jButton18ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton18ActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_jButton18ActionPerformed
+
+    private void productsTB1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_productsTB1MouseClicked
+        // TODO add your handling code here:
+    }//GEN-LAST:event_productsTB1MouseClicked
+
+    private void jButton14ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton14ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jButton14ActionPerformed
+
+    private void jButton20ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton20ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jButton20ActionPerformed
+
+    private void jButton21ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton21ActionPerformed
+        destination = "";
+        icon.setIcon(null);
+        path = "";
+        jButton24.setEnabled(true);
+    }//GEN-LAST:event_jButton21ActionPerformed
+
+    private void jButton23ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton23ActionPerformed
+        LoginDashboard ld = new LoginDashboard();
+        ld.setVisible(true);
+        this.dispose();
+    }//GEN-LAST:event_jButton23ActionPerformed
+
+    private void pname1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_pname1ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_pname1ActionPerformed
+
+    private void jButton24ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton24ActionPerformed
+        JFileChooser fileChooser = new JFileChooser();
+        int returnValue = fileChooser.showOpenDialog(null);
+        if (returnValue == JFileChooser.APPROVE_OPTION) {
+            try {
+                selectedFile = fileChooser.getSelectedFile();
+                destination = "src/ProductsImage/" + selectedFile.getName();
+                path = selectedFile.getAbsolutePath();
+
+                if (FileExistenceChecker(path) == 1) {
+                    JOptionPane.showMessageDialog(null, "File Already Exist, Rename or Choose another!");
+                    destination = "";
+                    path = "";
+                } else {
+                    icon.setIcon(ResizeImage(path, null, icon));
+                    jButton21.setEnabled(true);
+                    jButton24.setEnabled(false);
+                }
+            } catch (Exception ex) {
+                System.out.println("File Error!");
+            }
+        }
+    }//GEN-LAST:event_jButton24ActionPerformed
+
+    private void jButton22ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton22ActionPerformed
+        jTabbedPane1.setSelectedIndex(1);
+    }//GEN-LAST:event_jButton22ActionPerformed
+
+    private void jButton25ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton25ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jButton25ActionPerformed
 
     public static void main(String args[]) {
 
@@ -508,17 +836,26 @@ public class AdminDashboard extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel aname;
     private javax.swing.JLabel aname2;
+    private javax.swing.JLabel aname3;
     private javax.swing.JLabel icon;
+    private javax.swing.JLabel icon1;
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton10;
     private javax.swing.JButton jButton11;
     private javax.swing.JButton jButton12;
     private javax.swing.JButton jButton13;
+    private javax.swing.JButton jButton14;
     private javax.swing.JButton jButton15;
     private javax.swing.JButton jButton16;
     private javax.swing.JButton jButton17;
     private javax.swing.JButton jButton18;
     private javax.swing.JButton jButton2;
+    private javax.swing.JButton jButton20;
+    private javax.swing.JButton jButton21;
+    private javax.swing.JButton jButton22;
+    private javax.swing.JButton jButton23;
+    private javax.swing.JButton jButton24;
+    private javax.swing.JButton jButton25;
     private javax.swing.JButton jButton3;
     private javax.swing.JButton jButton4;
     private javax.swing.JButton jButton5;
@@ -527,9 +864,15 @@ public class AdminDashboard extends javax.swing.JFrame {
     private javax.swing.JButton jButton8;
     private javax.swing.JButton jButton9;
     private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel10;
+    private javax.swing.JLabel jLabel11;
+    private javax.swing.JLabel jLabel12;
+    private javax.swing.JLabel jLabel13;
+    private javax.swing.JLabel jLabel14;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
+    private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
     private javax.swing.JLabel jLabel7;
     private javax.swing.JLabel jLabel8;
@@ -537,14 +880,22 @@ public class AdminDashboard extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
+    private javax.swing.JPanel jPanel4;
+    private javax.swing.JPanel jPanel5;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
+    private javax.swing.JScrollPane jScrollPane4;
     private javax.swing.JTabbedPane jTabbedPane1;
     private javax.swing.JTextField pname;
+    private javax.swing.JTextField pname1;
     private javax.swing.JTextField pprice;
+    private javax.swing.JTextField pprice1;
     private javax.swing.JTable productsTB;
+    private javax.swing.JTable productsTB1;
     private javax.swing.JComboBox<String> pstatus;
+    private javax.swing.JComboBox<String> pstatus1;
     private javax.swing.JTextField pstocks;
+    private javax.swing.JTextField pstocks1;
     private javax.swing.JTable usersTB;
     // End of variables declaration//GEN-END:variables
 }
