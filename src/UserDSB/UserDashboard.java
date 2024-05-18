@@ -1,6 +1,5 @@
 package UserDSB;
 
-import static AdminDSB.AdminDashboard.data;
 import Config.DBConnector;
 import LoginDSB.*;
 import java.sql.ResultSet;

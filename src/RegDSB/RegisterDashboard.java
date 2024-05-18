@@ -2,60 +2,187 @@ package RegDSB;
 
 import Config.*;
 import LoginDSB.*;
+import java.awt.Color;
+import java.awt.Image;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.security.NoSuchAlgorithmException;
 import java.sql.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.regex.Pattern;
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import static javax.swing.JOptionPane.ERROR_MESSAGE;
 import static javax.swing.JOptionPane.INFORMATION_MESSAGE;
 
 public class RegisterDashboard extends javax.swing.JFrame {
 
+    public File selectedFile;
+    public String path2 = null;
+    public String destination = "";
+    public String oldPath;
+    public String path;
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
+    private static final Pattern CONTACT_PATTERN = Pattern.compile("^[0-9]{11}$");
+
     public RegisterDashboard() {
         initComponents();
     }
 
-    private String xemail, xusername;
+    public void createAccount() throws NoSuchAlgorithmException {
+        String emailText = email.getText().trim();
+        String contactText = contact.getText().trim();
+        String usernameText = username.getText().trim();
+        String passwordText = password.getText().trim();
+        String typeText = (String) type.getSelectedItem();
 
-    private boolean duplicateChecker() throws SQLException {
-        ResultSet rs = new DBConnector().getData("select * from inventory where email = '" + email.getText() + "' or username = '" + username.getText() + "'");
+        if (emailText.isEmpty() || !EMAIL_PATTERN.matcher(emailText).matches()) {
+            JOptionPane.showMessageDialog(this, "Invalid email address!");
+            return;
+        }
 
-        if (rs.next()) {
-            xemail = rs.getString("email");
-            if (xemail.equals(email.getText())) {
-                JOptionPane.showMessageDialog(this, "EMAIL HAS BEEN USED!", "OH NO!", ERROR_MESSAGE);
+        if (contactText.isEmpty() || !CONTACT_PATTERN.matcher(contactText).matches()) {
+            JOptionPane.showMessageDialog(this, "Invalid contact number! Must be 11 digits.");
+            return;
+        }
+
+        if (usernameText.isEmpty() || usernameText.length() < 3) {
+            JOptionPane.showMessageDialog(this, "Username must be at least 3 characters long!");
+            return;
+        }
+
+        if (passwordText.isEmpty() || passwordText.length() < 8) {
+            JOptionPane.showMessageDialog(this, "Password must be at least 8 characters long!");
+            return;
+        }
+
+        if (destination == null || selectedFile == null) {
+            JOptionPane.showMessageDialog(this, "Image file is required!");
+            return;
+        }
+
+        if (usernameText.isEmpty() || passwordText.isEmpty() || emailText.isEmpty() || contactText.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "FILL ALL THE REQUIREMENTS!");
+            return;
+        }
+
+        if (passwordText.length() < 8) {
+            JOptionPane.showMessageDialog(this, "PASSWORD MUST BE AT LEAST 8 CHARACTERS!");
+            return;
+        }
+
+        if (!contactText.matches("\\d+")) {
+            JOptionPane.showMessageDialog(this, "CONTACT MUST CONTAIN ONLY DIGITS!");
+            return;
+        }
+
+        try {
+            ResultSet rs = new DBConnector().getData("select * from inventory where email = '" + emailText + "' or username = '" + usernameText + "'");
+            if (rs.next()) {
+                String xemail = rs.getString("email");
+                if (xemail.equals(emailText)) {
+                    JOptionPane.showMessageDialog(this, "EMAIL HAS BEEN USED!", "OH NO!", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                String xusername = rs.getString("username");
+                if (xusername.equals(usernameText)) {
+                    JOptionPane.showMessageDialog(this, "USERNAME HAS BEEN USED!", "OH NO!", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
             }
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Error checking for duplicates!");
+            System.out.println(ex.getMessage());
+            return;
+        }
 
-            xusername = rs.getString("username");
-            if (xusername.equals(username.getText())) {
-                JOptionPane.showMessageDialog(this, "USERNAME HAS BEEN USED!", "OH NO!", ERROR_MESSAGE);
-            }
-            return true;
-        } else {
-            return false;
+        try {
+            String pass = passwordHashing.hashPassword(password.getText());
+
+            DBConnector cn = new DBConnector();
+            cn.insertData("insert into inventory (email,contact,username,password,type,status,image) "
+                    + "values ('" + emailText + "', '" + contactText + "', "
+                    + "'" + usernameText + "', '" + pass + "', '" + typeText + "', 'Pending', '" + destination + "')");
+
+            Files.copy(selectedFile.toPath(), new File(destination).toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+            JOptionPane.showMessageDialog(this, "ACCOUNT CREATED SUCCESSFULLY!");
+
+            LoginDashboard ld = new LoginDashboard();
+            ld.setVisible(true);
+            this.dispose();
+
+            username.setText("");
+            email.setText("");
+            password.setText("");
+            contact.setText("");
+            icon.setIcon(null);
+
+            username.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+            email.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+            password.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+            contact.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+
+        } catch (SQLException | IOException ex) {
+            JOptionPane.showMessageDialog(this, "Error creating account!");
+            System.out.println(ex.getMessage());
         }
     }
 
-    private boolean validationChecker() {
-        if (username.getText().isEmpty() || password.getText().isEmpty() || email.getText().isEmpty() || contact.getText().isEmpty()) {
-            errorMessage("FILL ALL THE REQUIREMENTS!");
-            return false;
-        } else if (password.getText().length() < 8) {
-            errorMessage("PASSWORD MUST BE AT LEAST 8 CHARACTERS!");
-            return false;
-        } else if (!contact.getText().matches("\\d+")) {
-            errorMessage("CONTACT MUST CONTAIN ONLY DIGITS!");
-            return false;
-        } else {
-            return true;
+    public static int getHeightFromWidth(String imagePath, int desiredWidth) {
+        try {
+            File imageFile = new File(imagePath);
+            BufferedImage image = ImageIO.read(imageFile);
+
+            int originalWidth = image.getWidth();
+            int originalHeight = image.getHeight();
+
+            int newHeight = (int) ((double) desiredWidth / originalWidth * originalHeight);
+
+            return newHeight;
+        } catch (IOException ex) {
+            System.out.println("No image found!");
         }
+
+        return -1;
     }
 
-    private void errorMessage(String message) {
-        JOptionPane.showMessageDialog(this, message, "ERROR!", JOptionPane.ERROR_MESSAGE);
+    private ImageIcon ResizeImage(String ImagePath, byte[] pic, JLabel label) {
+        ImageIcon MyImage = null;
+        if (ImagePath != null) {
+            MyImage = new ImageIcon(ImagePath);
+        } else {
+            MyImage = new ImageIcon(pic);
+        }
+
+        int newHeight = getHeightFromWidth(ImagePath, label.getWidth());
+
+        Image img = MyImage.getImage();
+        Image newImg = img.getScaledInstance(label.getWidth(), newHeight, Image.SCALE_SMOOTH);
+        ImageIcon image = new ImageIcon(newImg);
+        return image;
     }
 
-    private void successMessage(String message) {
-        JOptionPane.showMessageDialog(this, message, "SUCCESS!", JOptionPane.INFORMATION_MESSAGE);
+    private int FileExistenceChecker(String path) {
+        File file = new File(path);
+        String fileName = file.getName();
+
+        Path filePath = Paths.get("src/ImageDB", fileName);
+        boolean fileExists = Files.exists(filePath);
+
+        if (fileExists) {
+            return 1;
+        } else {
+            return 0;
+        }
+
     }
 
     @SuppressWarnings("unchecked")
@@ -74,11 +201,16 @@ public class RegisterDashboard extends javax.swing.JFrame {
         type = new javax.swing.JComboBox<>();
         password = new javax.swing.JPasswordField();
         showPass = new javax.swing.JCheckBox();
+        jPanel2 = new javax.swing.JPanel();
+        icon = new javax.swing.JLabel();
+        remove = new javax.swing.JButton();
+        select = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setMinimumSize(new java.awt.Dimension(440, 536));
+        setMinimumSize(new java.awt.Dimension(733, 536));
         setUndecorated(true);
-        setPreferredSize(new java.awt.Dimension(440, 536));
+        setPreferredSize(new java.awt.Dimension(733, 536));
+        setResizable(false);
         getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
         jLabel3.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
@@ -175,7 +307,28 @@ public class RegisterDashboard extends javax.swing.JFrame {
         });
         jPanel1.add(showPass, new org.netbeans.lib.awtextra.AbsoluteConstraints(220, 360, -1, -1));
 
-        getContentPane().add(jPanel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 440, 540));
+        jPanel2.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+        jPanel2.add(icon, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 20, 230, 260));
+
+        jPanel1.add(jPanel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(400, 60, 270, 300));
+
+        remove.setText("REMOVE");
+        remove.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                removeActionPerformed(evt);
+            }
+        });
+        jPanel1.add(remove, new org.netbeans.lib.awtextra.AbsoluteConstraints(400, 420, 270, 30));
+
+        select.setText("SELECT");
+        select.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                selectActionPerformed(evt);
+            }
+        });
+        jPanel1.add(select, new org.netbeans.lib.awtextra.AbsoluteConstraints(400, 380, 270, 30));
+
+        getContentPane().add(jPanel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 740, 540));
 
         pack();
         setLocationRelativeTo(null);
@@ -204,24 +357,9 @@ public class RegisterDashboard extends javax.swing.JFrame {
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
         try {
-            if (duplicateChecker()) {
-            } else if (!validationChecker()) {
-            } else {
-                String pass = passwordHashing.hashPassword(password.getText());
-                new DBConnector().insertData("insert into inventory (email,username,password,contact,type,status) "
-                        + "values ('" + email.getText() + "','" + username.getText() + "', '" + pass + "'"
-                        + ",'" + contact.getText() + "','" + type.getSelectedItem() + "','PENDING')");
-
-                JOptionPane.showMessageDialog(this, "REGISTRATION SUCCESSFULL!", "SUCCESS", INFORMATION_MESSAGE);
-
-                new LoginDashboard().setVisible(true);
-                dispose();
-
-            }
-        } catch (SQLException er) {
-            System.out.println("Eror: " + er.getMessage());
+            createAccount();
         } catch (NoSuchAlgorithmException ex) {
-            System.out.println("Error: " + ex.getMessage());
+            Logger.getLogger(RegisterDashboard.class.getName()).log(Level.SEVERE, null, ex);
         }
     }//GEN-LAST:event_jButton2ActionPerformed
 
@@ -233,6 +371,35 @@ public class RegisterDashboard extends javax.swing.JFrame {
         char echoChar = showPass.isSelected() ? (char) 0 : '*';
         password.setEchoChar(echoChar);
     }//GEN-LAST:event_showPassActionPerformed
+
+    private void selectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_selectActionPerformed
+        JFileChooser fileChooser = new JFileChooser();
+        int returnValue = fileChooser.showOpenDialog(null);
+        if (returnValue == JFileChooser.APPROVE_OPTION) {
+            try {
+                selectedFile = fileChooser.getSelectedFile();
+                destination = "src/ImageDB/" + selectedFile.getName();
+                path = selectedFile.getAbsolutePath();
+
+                if (FileExistenceChecker(path) == 1) {
+                    JOptionPane.showMessageDialog(null, "File Already Exist, Rename or Choose another!");
+                    destination = "";
+                    path = "";
+                } else {
+                    icon.setIcon(ResizeImage(path, null, icon));
+                    remove.setEnabled(true);
+                }
+            } catch (Exception ex) {
+                System.out.println("File Error!");
+            }
+        }
+    }//GEN-LAST:event_selectActionPerformed
+
+    private void removeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_removeActionPerformed
+        icon.setIcon(null);
+        path = "";
+        destination = "";
+    }//GEN-LAST:event_removeActionPerformed
 
     public static void main(String args[]) {
 
@@ -246,13 +413,17 @@ public class RegisterDashboard extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTextField contact;
     private javax.swing.JTextField email;
+    private javax.swing.JLabel icon;
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel9;
     private javax.swing.JPanel jPanel1;
+    private javax.swing.JPanel jPanel2;
     private javax.swing.JPasswordField password;
+    private javax.swing.JButton remove;
+    private javax.swing.JButton select;
     private javax.swing.JCheckBox showPass;
     private javax.swing.JComboBox<String> type;
     private javax.swing.JTextField username;
