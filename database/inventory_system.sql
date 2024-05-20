@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: May 20, 2024 at 05:30 AM
+-- Generation Time: May 20, 2024 at 06:33 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -38,20 +38,6 @@ CREATE TABLE `inventory` (
   `Image` varchar(50) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `inventory`
---
-
-INSERT INTO `inventory` (`id`, `email`, `contact`, `username`, `password`, `type`, `status`, `Image`) VALUES
-(13, '1', '1', 'USERNAME', 'MZ9NJuPFNrXdhxuyxS4xeA==', 'ADMIN', 'DECLINED', '0'),
-(14, 'email', '1', 'user', 'EBGT1xgcyINArlsrF7uooQ==', 'Admin', 'ACTIVE', '0'),
-(15, '2', '2', '2', 'nfYjWBcP90UXiA7Mgn1V1Q==', 'USER', 'ACTIVE', '0'),
-(16, '3', '3', '3', '9bsMjeFGxntEurv05lhMwA==', 'USER', 'ACTIVE', '0'),
-(17, '123@gmail.com', '1234567891', '123', '9bsMjeFGxntEurv05lhMwA==', 'ADMIN', 'Pending', 'src/ImageDB/gg.png'),
-(18, '2@gmail.com', '1234567891', '234', '9bsMjeFGxntEurv05lhMwA==', 'ADMIN', 'Pending', 'src/ImageDB/Manacap.png'),
-(19, '5', '12312312311', '233', '9bsMjeFGxntEurv05lhMwA==', 'ADMIN', 'ACTIVE', 'src/ImageDB/2.png'),
-(20, '4124124@gmail.com', '12312312311', '323', '9bsMjeFGxntEurv05lhMwA==', 'ADMIN', 'Pending', '');
-
 -- --------------------------------------------------------
 
 --
@@ -73,13 +59,6 @@ CREATE TABLE `orders` (
   `o_date` date DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `orders`
---
-
-INSERT INTO `orders` (`o_id`, `o_cname`, `o_name`, `o_price`, `o_stocks`, `o_status`, `o_method`, `o_quantity`, `o_address`, `total_profit`, `o_approve`, `o_date`) VALUES
-(20, '233', 'Google', '1000', '10', 'AVAILABLE', 'CASH ON DELIVERY', 10, 'asd', '-10000.0', 'Delivered', '2024-05-20');
-
 -- --------------------------------------------------------
 
 --
@@ -94,13 +73,6 @@ CREATE TABLE `products` (
   `p_status` varchar(20) NOT NULL,
   `p_image` varchar(50) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `products`
---
-
-INSERT INTO `products` (`p_id`, `p_name`, `p_price`, `p_stocks`, `p_status`, `p_image`) VALUES
-(21, 'Google', '1000', '20', 'AVAILABLE', 'src/ProductsImage/gg (1).png');
 
 --
 -- Indexes for dumped tables
@@ -138,7 +110,7 @@ ALTER TABLE `inventory`
 -- AUTO_INCREMENT for table `orders`
 --
 ALTER TABLE `orders`
-  MODIFY `o_id` int(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
+  MODIFY `o_id` int(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 
 --
 -- AUTO_INCREMENT for table `products`

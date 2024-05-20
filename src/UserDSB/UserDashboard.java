@@ -1,13 +1,18 @@
 package UserDSB;
 
+import AdminDSB.AdminDashboard;
+import AdminDSB.myAccount;
 import Config.DBConnector;
 import Config.Session;
+import Config.passwordHashing;
 import LoginDSB.*;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.NoSuchAlgorithmException;
 import java.sql.ResultSet;
@@ -16,8 +21,10 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
+import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.SpinnerNumberModel;
@@ -32,6 +39,8 @@ public class UserDashboard extends javax.swing.JFrame {
     public String destination = "";
     public String oldPath;
     public String path;
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
+    private static final Pattern CONTACT_PATTERN = Pattern.compile("^[0-9]{11}$");
 
     public UserDashboard() {
         initComponents();
@@ -45,6 +54,81 @@ public class UserDashboard extends javax.swing.JFrame {
         } catch (SQLException e) {
             System.err.println("An error occurred while fetching data: " + e.getMessage());
         }
+    }
+
+    private String xemail, xusername;
+
+    private boolean updateChecker() throws SQLException {
+        ResultSet rs = new DBConnector().getData("select * from inventory where (username = '" + username.getText() + "' or email = '" + email.getText() + "') and id != '" + id2.getText() + "'");
+        if (rs.next()) {
+            xemail = rs.getString("email");
+            if (xemail.equalsIgnoreCase(email.getText())) {
+                JOptionPane.showMessageDialog(null, "EMAIL HAS BEEN USED!");
+            }
+            xusername = rs.getString("username");
+            if (xusername.equalsIgnoreCase(username.getText())) {
+                JOptionPane.showMessageDialog(null, "USERNAME HAS BEEN USERD!");
+            }
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public void myData() throws SQLException, IOException {
+        if (updateChecker()) {
+        } else if (!validationChecker()) {
+        } else {
+            new DBConnector().updateData("update inventory set email = '" + email.getText() + "',username = '" + username.getText() + "', "
+                    + "contact = '" + contact.getText() + "', Image = '" + destination + "' where id = '" + id2.getText() + "'");
+
+            if (selectedFile != null) {
+                Files.copy(selectedFile.toPath(), new File(destination).toPath(), StandardCopyOption.REPLACE_EXISTING);
+            }
+
+            JOptionPane.showMessageDialog(null, "ACCOUNT SUCCESSFULLY UPDATED!");
+            LoginDashboard ad = new LoginDashboard();
+            ad.setVisible(true);
+            dispose();
+
+        }
+    }
+
+    private boolean validationChecker() {
+
+        if (email.getText().isEmpty() || !EMAIL_PATTERN.matcher(email.getText()).matches()) {
+            JOptionPane.showMessageDialog(this, "INVALID EMAIL ADDRESS!");
+            return false;
+        } else if (contact.getText().isEmpty() || !CONTACT_PATTERN.matcher(contact.getText()).matches()) {
+            JOptionPane.showMessageDialog(this, "INVALID CONTACT NUMBER! MUST BE 11 DIGITS!");
+            return false;
+        } else if (username.getText().isEmpty() || email.getText().isEmpty() || contact.getText().isEmpty()) {
+            JOptionPane.showMessageDialog(null, "FILL ALL THE REQUIREMENTS!");
+            return false;
+        } else if (!contact.getText().matches("\\d+")) {
+            JOptionPane.showMessageDialog(null, "CONTACT MUST CONTAIN ONLY DIGITS!");
+            return false;
+        } else if (selectedFile == null && pic.getIcon() == null) {
+            JOptionPane.showMessageDialog(null, "PLEASE INSERT AN IMAGE FIRST!");
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    private int FileExistenceChecker(String path) {
+        File file = new File(path);
+        String fileName = file.getName();
+
+        Path filePath = Paths.get("src/ImageDB", fileName);
+        boolean fileExists = Files.exists(filePath);
+
+        if (fileExists) {
+            return 1;
+        } else {
+            return 0;
+        }
+
     }
 
     public void placeOrder() throws NoSuchAlgorithmException {
@@ -78,7 +162,7 @@ public class UserDashboard extends javax.swing.JFrame {
                     int priceInt = Integer.parseInt(price.getText());
                     double totalPrice = quantityValue * priceInt;
                     double totalCost = stocksInt * priceInt;
-                    double totalProfit = totalPrice - totalCost;
+                    double totalProfit = totalCost - totalPrice;
 
                     DBConnector cn = new DBConnector();
 
@@ -140,10 +224,19 @@ public class UserDashboard extends javax.swing.JFrame {
         return image;
     }
 
+    private void errorMessage(String message) {
+        JOptionPane.showMessageDialog(this, message, "ERROR!", JOptionPane.ERROR_MESSAGE);
+    }
+
+    private void successMessage(String message) {
+        JOptionPane.showMessageDialog(this, message, "SUCCESS!", JOptionPane.INFORMATION_MESSAGE);
+    }
+
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        jPanel6 = new javax.swing.JPanel();
         jTabbedPane1 = new javax.swing.JTabbedPane();
         jPanel1 = new javax.swing.JPanel();
         jScrollPane2 = new javax.swing.JScrollPane();
@@ -157,7 +250,6 @@ public class UserDashboard extends javax.swing.JFrame {
         jPanel2 = new javax.swing.JPanel();
         jLabel5 = new javax.swing.JLabel();
         adminName1 = new javax.swing.JLabel();
-        jButton5 = new javax.swing.JButton();
         jLabel15 = new javax.swing.JLabel();
         name = new javax.swing.JTextField();
         price = new javax.swing.JTextField();
@@ -181,34 +273,38 @@ public class UserDashboard extends javax.swing.JFrame {
         jPanel3 = new javax.swing.JPanel();
         jLabel8 = new javax.swing.JLabel();
         adminName2 = new javax.swing.JLabel();
-        jButton6 = new javax.swing.JButton();
-        jLabel16 = new javax.swing.JLabel();
-        name1 = new javax.swing.JTextField();
-        price1 = new javax.swing.JTextField();
-        jLabel24 = new javax.swing.JLabel();
-        jLabel25 = new javax.swing.JLabel();
-        status1 = new javax.swing.JTextField();
-        jLabel26 = new javax.swing.JLabel();
-        id1 = new javax.swing.JTextField();
-        jButton29 = new javax.swing.JButton();
-        jButton30 = new javax.swing.JButton();
-        jPanel8 = new javax.swing.JPanel();
-        productImage1 = new javax.swing.JLabel();
         jLabel9 = new javax.swing.JLabel();
-        stocks1 = new javax.swing.JTextField();
-        jLabel27 = new javax.swing.JLabel();
-        address1 = new javax.swing.JTextField();
-        method1 = new javax.swing.JComboBox<>();
-        jLabel28 = new javax.swing.JLabel();
-        quantity1 = new javax.swing.JSpinner();
-        jLabel29 = new javax.swing.JLabel();
+        email = new javax.swing.JTextField();
+        username = new javax.swing.JTextField();
+        contact = new javax.swing.JTextField();
+        id2 = new javax.swing.JTextField();
+        jPanel4 = new javax.swing.JPanel();
+        pic = new javax.swing.JLabel();
+        jButton4 = new javax.swing.JButton();
+        jButton7 = new javax.swing.JButton();
+        jButton8 = new javax.swing.JButton();
+        select = new javax.swing.JButton();
+        remove = new javax.swing.JButton();
+        jPanel5 = new javax.swing.JPanel();
+        jLabel10 = new javax.swing.JLabel();
+        adminName3 = new javax.swing.JLabel();
+        jLabel11 = new javax.swing.JLabel();
+        oldPassword = new javax.swing.JPasswordField();
+        newPassword = new javax.swing.JPasswordField();
+        cpassword = new javax.swing.JPasswordField();
+        jLabel17 = new javax.swing.JLabel();
+        showPass = new javax.swing.JCheckBox();
+        jButton10 = new javax.swing.JButton();
+        jButton11 = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setMinimumSize(new java.awt.Dimension(1098, 699));
         setUndecorated(true);
-        setPreferredSize(new java.awt.Dimension(1098, 699));
         setResizable(false);
         getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        jPanel6.setBackground(new java.awt.Color(255, 255, 255));
+        getContentPane().add(jPanel6, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, -40, 1100, 70));
 
         jPanel1.setBackground(new java.awt.Color(255, 255, 255));
         jPanel1.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
@@ -282,15 +378,6 @@ public class UserDashboard extends javax.swing.JFrame {
         adminName1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Images/boy.png"))); // NOI18N
         adminName1.setText("USERS NAME");
         jPanel2.add(adminName1, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 20, -1, -1));
-
-        jButton5.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
-        jButton5.setText("LOGOUT");
-        jButton5.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton5ActionPerformed(evt);
-            }
-        });
-        jPanel2.add(jButton5, new org.netbeans.lib.awtextra.AbsoluteConstraints(980, 20, 100, -1));
 
         jLabel15.setFont(new java.awt.Font("Tahoma", 0, 15)); // NOI18N
         jLabel15.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
@@ -408,118 +495,172 @@ public class UserDashboard extends javax.swing.JFrame {
         adminName2.setText("USERS NAME");
         jPanel3.add(adminName2, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 20, -1, -1));
 
-        jButton6.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
-        jButton6.setText("LOGOUT");
-        jButton6.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton6ActionPerformed(evt);
-            }
-        });
-        jPanel3.add(jButton6, new org.netbeans.lib.awtextra.AbsoluteConstraints(980, 20, 100, -1));
-
-        jLabel16.setFont(new java.awt.Font("Tahoma", 0, 15)); // NOI18N
-        jLabel16.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel16.setText("Product Name");
-        jPanel3.add(jLabel16, new org.netbeans.lib.awtextra.AbsoluteConstraints(550, 200, 230, -1));
-
-        name1.setEditable(false);
-        name1.setHorizontalAlignment(javax.swing.JTextField.CENTER);
-        name1.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                name1ActionPerformed(evt);
-            }
-        });
-        jPanel3.add(name1, new org.netbeans.lib.awtextra.AbsoluteConstraints(550, 220, 230, 30));
-
-        price1.setEditable(false);
-        price1.setHorizontalAlignment(javax.swing.JTextField.CENTER);
-        jPanel3.add(price1, new org.netbeans.lib.awtextra.AbsoluteConstraints(790, 220, 230, 30));
-
-        jLabel24.setFont(new java.awt.Font("Tahoma", 0, 15)); // NOI18N
-        jLabel24.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel24.setText("Product Price");
-        jPanel3.add(jLabel24, new org.netbeans.lib.awtextra.AbsoluteConstraints(790, 200, 230, -1));
-
-        jLabel25.setFont(new java.awt.Font("Tahoma", 0, 15)); // NOI18N
-        jLabel25.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel25.setText("Product Stocks");
-        jPanel3.add(jLabel25, new org.netbeans.lib.awtextra.AbsoluteConstraints(550, 270, 230, -1));
-
-        status1.setEditable(false);
-        status1.setHorizontalAlignment(javax.swing.JTextField.CENTER);
-        jPanel3.add(status1, new org.netbeans.lib.awtextra.AbsoluteConstraints(790, 290, 230, 30));
-
-        jLabel26.setFont(new java.awt.Font("Tahoma", 0, 15)); // NOI18N
-        jLabel26.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel26.setText("Product Status");
-        jPanel3.add(jLabel26, new org.netbeans.lib.awtextra.AbsoluteConstraints(790, 270, 230, -1));
-
-        id1.setEditable(false);
-        id1.setHorizontalAlignment(javax.swing.JTextField.CENTER);
-        id1.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                id1ActionPerformed(evt);
-            }
-        });
-        jPanel3.add(id1, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 590, 470, 30));
-
-        jButton29.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
-        jButton29.setText("CONFIRM");
-        jButton29.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton29ActionPerformed(evt);
-            }
-        });
-        jPanel3.add(jButton29, new org.netbeans.lib.awtextra.AbsoluteConstraints(550, 480, 110, -1));
-
-        jButton30.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
-        jButton30.setText("BACK");
-        jButton30.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton30ActionPerformed(evt);
-            }
-        });
-        jPanel3.add(jButton30, new org.netbeans.lib.awtextra.AbsoluteConstraints(910, 480, 110, -1));
-
-        jPanel8.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
-        jPanel8.add(productImage1, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 10, 450, 400));
-
-        jPanel3.add(jPanel8, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 150, 470, 420));
-
         jLabel9.setFont(new java.awt.Font("Yu Gothic", 1, 18)); // NOI18N
         jLabel9.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Images/samot.png"))); // NOI18N
         jLabel9.setText("ADMINS DASHBOARD");
         jPanel3.add(jLabel9, new org.netbeans.lib.awtextra.AbsoluteConstraints(290, 20, 470, 150));
 
-        stocks1.setEditable(false);
-        stocks1.setHorizontalAlignment(javax.swing.JTextField.CENTER);
-        jPanel3.add(stocks1, new org.netbeans.lib.awtextra.AbsoluteConstraints(550, 290, 230, 30));
+        email.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
+        email.setHorizontalAlignment(javax.swing.JTextField.CENTER);
+        email.setText("EMAIL ");
+        email.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                emailMouseClicked(evt);
+            }
+        });
+        jPanel3.add(email, new org.netbeans.lib.awtextra.AbsoluteConstraints(220, 180, 240, 30));
 
-        jLabel27.setFont(new java.awt.Font("Tahoma", 0, 15)); // NOI18N
-        jLabel27.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel27.setText("Payment Method");
-        jPanel3.add(jLabel27, new org.netbeans.lib.awtextra.AbsoluteConstraints(550, 340, 230, -1));
+        username.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
+        username.setHorizontalAlignment(javax.swing.JTextField.CENTER);
+        username.setText("USERNAME");
+        username.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                usernameFocusGained(evt);
+            }
+        });
+        username.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                usernameMouseClicked(evt);
+            }
+        });
+        jPanel3.add(username, new org.netbeans.lib.awtextra.AbsoluteConstraints(220, 220, 240, 30));
 
-        address1.setHorizontalAlignment(javax.swing.JTextField.CENTER);
-        jPanel3.add(address1, new org.netbeans.lib.awtextra.AbsoluteConstraints(550, 430, 470, 30));
+        contact.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
+        contact.setHorizontalAlignment(javax.swing.JTextField.CENTER);
+        contact.setText("CONTACT#\n");
+        contact.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                contactFocusGained(evt);
+            }
+        });
+        jPanel3.add(contact, new org.netbeans.lib.awtextra.AbsoluteConstraints(220, 260, 240, 30));
 
-        method1.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "CASH ON DELIVERY" }));
-        jPanel3.add(method1, new org.netbeans.lib.awtextra.AbsoluteConstraints(550, 360, 230, 30));
+        id2.setEditable(false);
+        id2.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
+        id2.setHorizontalAlignment(javax.swing.JTextField.CENTER);
+        id2.setText("ID");
+        id2.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                id2MouseClicked(evt);
+            }
+        });
+        jPanel3.add(id2, new org.netbeans.lib.awtextra.AbsoluteConstraints(220, 300, 240, 30));
 
-        jLabel28.setFont(new java.awt.Font("Tahoma", 0, 15)); // NOI18N
-        jLabel28.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel28.setText("Quantity");
-        jPanel3.add(jLabel28, new org.netbeans.lib.awtextra.AbsoluteConstraints(790, 340, 230, -1));
+        jPanel4.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+        jPanel4.add(pic, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 10, 370, 350));
 
-        quantity1.setValue(1);
-        jPanel3.add(quantity1, new org.netbeans.lib.awtextra.AbsoluteConstraints(790, 360, 230, 30));
+        jPanel3.add(jPanel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(500, 180, 390, 370));
 
-        jLabel29.setFont(new java.awt.Font("Tahoma", 0, 15)); // NOI18N
-        jLabel29.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel29.setText("Address");
-        jPanel3.add(jLabel29, new org.netbeans.lib.awtextra.AbsoluteConstraints(550, 410, 470, -1));
+        jButton4.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
+        jButton4.setText("CANCEL");
+        jButton4.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton4ActionPerformed(evt);
+            }
+        });
+        jPanel3.add(jButton4, new org.netbeans.lib.awtextra.AbsoluteConstraints(210, 570, 120, -1));
+
+        jButton7.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
+        jButton7.setText("UPDATE");
+        jButton7.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton7ActionPerformed(evt);
+            }
+        });
+        jPanel3.add(jButton7, new org.netbeans.lib.awtextra.AbsoluteConstraints(350, 570, 120, -1));
+
+        jButton8.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
+        jButton8.setText("CHANGE PASS");
+        jButton8.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton8ActionPerformed(evt);
+            }
+        });
+        jPanel3.add(jButton8, new org.netbeans.lib.awtextra.AbsoluteConstraints(350, 530, 120, -1));
+
+        select.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
+        select.setText("SELECT");
+        select.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                selectActionPerformed(evt);
+            }
+        });
+        jPanel3.add(select, new org.netbeans.lib.awtextra.AbsoluteConstraints(500, 570, 120, -1));
+
+        remove.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
+        remove.setText("REMOVE");
+        remove.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                removeActionPerformed(evt);
+            }
+        });
+        jPanel3.add(remove, new org.netbeans.lib.awtextra.AbsoluteConstraints(770, 570, 120, -1));
 
         jTabbedPane1.addTab("tab1", jPanel3);
+
+        jPanel5.setBackground(new java.awt.Color(255, 255, 255));
+        jPanel5.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        jLabel10.setFont(new java.awt.Font("Yu Gothic", 1, 18)); // NOI18N
+        jLabel10.setText("USERS DASHBOARD");
+        jPanel5.add(jLabel10, new org.netbeans.lib.awtextra.AbsoluteConstraints(510, 80, 240, 30));
+
+        adminName3.setFont(new java.awt.Font("Yu Gothic", 1, 18)); // NOI18N
+        adminName3.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Images/boy.png"))); // NOI18N
+        adminName3.setText("USERS NAME");
+        jPanel5.add(adminName3, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 20, -1, -1));
+
+        jLabel11.setFont(new java.awt.Font("Yu Gothic", 1, 18)); // NOI18N
+        jLabel11.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Images/samot.png"))); // NOI18N
+        jLabel11.setText("ADMINS DASHBOARD");
+        jPanel5.add(jLabel11, new org.netbeans.lib.awtextra.AbsoluteConstraints(290, 20, 470, 150));
+
+        oldPassword.setHorizontalAlignment(javax.swing.JTextField.CENTER);
+        oldPassword.setText("OLD PASSWORD");
+        jPanel5.add(oldPassword, new org.netbeans.lib.awtextra.AbsoluteConstraints(420, 250, 240, 30));
+
+        newPassword.setHorizontalAlignment(javax.swing.JTextField.CENTER);
+        newPassword.setText("NEW PASSWORD");
+        jPanel5.add(newPassword, new org.netbeans.lib.awtextra.AbsoluteConstraints(420, 310, 240, 30));
+
+        cpassword.setHorizontalAlignment(javax.swing.JTextField.CENTER);
+        cpassword.setText("CONFIRM PASS");
+        jPanel5.add(cpassword, new org.netbeans.lib.awtextra.AbsoluteConstraints(420, 350, 240, 30));
+
+        jLabel17.setFont(new java.awt.Font("Yu Gothic", 1, 18)); // NOI18N
+        jLabel17.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Images/eidt.png"))); // NOI18N
+        jLabel17.setText("CHANGE PASS");
+        jPanel5.add(jLabel17, new org.netbeans.lib.awtextra.AbsoluteConstraints(450, 170, 190, 40));
+
+        showPass.setBackground(new java.awt.Color(255, 255, 255));
+        showPass.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
+        showPass.setText("SHOW PASSWORD");
+        showPass.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                showPassActionPerformed(evt);
+            }
+        });
+        jPanel5.add(showPass, new org.netbeans.lib.awtextra.AbsoluteConstraints(540, 390, -1, -1));
+
+        jButton10.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
+        jButton10.setText("CANCEL");
+        jButton10.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton10ActionPerformed(evt);
+            }
+        });
+        jPanel5.add(jButton10, new org.netbeans.lib.awtextra.AbsoluteConstraints(410, 540, 100, -1));
+
+        jButton11.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
+        jButton11.setText("CHANGE");
+        jButton11.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton11ActionPerformed(evt);
+            }
+        });
+        jPanel5.add(jButton11, new org.netbeans.lib.awtextra.AbsoluteConstraints(570, 540, 100, -1));
+
+        jTabbedPane1.addTab("tab1", jPanel5);
 
         getContentPane().add(jTabbedPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 1100, 700));
 
@@ -547,10 +688,6 @@ public class UserDashboard extends javax.swing.JFrame {
     private void nameActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_nameActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_nameActionPerformed
-
-    private void jButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton5ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jButton5ActionPerformed
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
         int rowIndex = products.getSelectedRow();
@@ -591,29 +728,137 @@ public class UserDashboard extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_productsMouseClicked
 
-    private void jButton6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton6ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jButton6ActionPerformed
-
-    private void name1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_name1ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_name1ActionPerformed
-
-    private void id1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_id1ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_id1ActionPerformed
-
-    private void jButton29ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton29ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jButton29ActionPerformed
-
-    private void jButton30ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton30ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jButton30ActionPerformed
-
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-        // TODO add your handling code here:
+
+        try {
+            Session sess = Session.getInstance();
+            ResultSet rs = new DBConnector().getData("select * from inventory where id = '" + sess.getId() + "'");
+            if (rs.next()) {
+
+                id2.setText("" + rs.getString("id"));
+                email.setText("" + rs.getString("email"));
+                username.setText("" + rs.getString("username"));
+                contact.setText("" + rs.getString("contact"));
+
+                pic.setIcon(ResizeImage(rs.getString("image"), null, pic));
+                oldPath = rs.getString("image");
+                path = rs.getString("image");
+                destination = rs.getString("image");
+                jTabbedPane1.setSelectedIndex(2);
+            }
+        } catch (SQLException er) {
+            System.out.println("ERROR: " + er.getMessage());
+        }
     }//GEN-LAST:event_jButton2ActionPerformed
+
+    private void emailMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_emailMouseClicked
+        email.setText("");
+    }//GEN-LAST:event_emailMouseClicked
+
+    private void usernameFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_usernameFocusGained
+        username.setText("");
+    }//GEN-LAST:event_usernameFocusGained
+
+    private void usernameMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_usernameMouseClicked
+
+    }//GEN-LAST:event_usernameMouseClicked
+
+    private void contactFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_contactFocusGained
+        contact.setText("");
+    }//GEN-LAST:event_contactFocusGained
+
+    private void id2MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_id2MouseClicked
+
+    }//GEN-LAST:event_id2MouseClicked
+
+    private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
+        jTabbedPane1.setSelectedIndex(0);
+    }//GEN-LAST:event_jButton4ActionPerformed
+
+    private void jButton7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton7ActionPerformed
+        try {
+            myData();
+        } catch (SQLException | IOException ex) {
+            Logger.getLogger(myAccount.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }//GEN-LAST:event_jButton7ActionPerformed
+
+    private void jButton8ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton8ActionPerformed
+        jTabbedPane1.setSelectedIndex(3);
+    }//GEN-LAST:event_jButton8ActionPerformed
+
+    private void selectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_selectActionPerformed
+        JFileChooser fileChooser = new JFileChooser();
+        int returnValue = fileChooser.showOpenDialog(null);
+        if (returnValue == JFileChooser.APPROVE_OPTION) {
+            try {
+                selectedFile = fileChooser.getSelectedFile();
+                destination = "src/ImageDB/" + selectedFile.getName();
+                path = selectedFile.getAbsolutePath();
+
+                if (FileExistenceChecker(path) == 1) {
+                    JOptionPane.showMessageDialog(null, "File Already Exist, Rename or Choose another!");
+                    destination = "";
+                    path = "";
+                } else {
+                    pic.setIcon(ResizeImage(path, null, pic));
+                    remove.setEnabled(true);
+                    select.setEnabled(false);
+                }
+            } catch (Exception ex) {
+                System.out.println("File Error!");
+            }
+        }
+    }//GEN-LAST:event_selectActionPerformed
+
+    private void removeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_removeActionPerformed
+        destination = "";
+        pic.setIcon(null);
+        path = "";
+        select.setEnabled(true);
+        remove.setEnabled(false);
+    }//GEN-LAST:event_removeActionPerformed
+
+    private void showPassActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_showPassActionPerformed
+        char echoChar = showPass.isSelected() ? (char) 0 : '*';
+        oldPassword.setEchoChar(echoChar);
+        newPassword.setEchoChar(echoChar);
+        cpassword.setEchoChar(echoChar);
+    }//GEN-LAST:event_showPassActionPerformed
+
+    private void jButton10ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton10ActionPerformed
+        jTabbedPane1.setSelectedIndex(2);
+    }//GEN-LAST:event_jButton10ActionPerformed
+
+    private void jButton11ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton11ActionPerformed
+        try {
+            if (!newPassword.getText().equals(cpassword.getText())) {
+                errorMessage("PASSWORD DOES NOT MATCH!");
+                return;
+            } else {
+                Session sess = Session.getInstance();
+                ResultSet rs = new DBConnector().getData("select * from inventory where id = '" + sess.getId() + "'");
+                if (rs.next()) {
+                    String oldPass = rs.getString("password");
+                    String oldHash = passwordHashing.hashPassword(oldPassword.getText());
+
+                    if (oldPass.equals(oldHash)) {
+                        String newPass = passwordHashing.hashPassword(newPassword.getText());
+                        new DBConnector().updateData("update inventory set password = '" + newPass + "' where id = '" + sess.getId() + "'");
+                        successMessage("ACCOUNT SUCCESSFULLY UPDATED!");
+                        new LoginDashboard().setVisible(true);
+                        dispose();
+                    } else {
+                        errorMessage("OLD PASSWORD IS INCORRECT!");
+                    }
+                } else {
+                    errorMessage("NO ACCOUNT FOUND!");
+                }
+            }
+        } catch (SQLException | NoSuchAlgorithmException er) {
+            System.out.println("Error: " + er.getMessage());
+        }
+    }//GEN-LAST:event_jButton11ActionPerformed
 
     public static void main(String args[]) {
 
@@ -626,35 +871,35 @@ public class UserDashboard extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTextField address;
-    private javax.swing.JTextField address1;
     private javax.swing.JLabel adminName;
     private javax.swing.JLabel adminName1;
     private javax.swing.JLabel adminName2;
+    private javax.swing.JLabel adminName3;
+    public javax.swing.JTextField contact;
+    private javax.swing.JPasswordField cpassword;
+    public javax.swing.JTextField email;
     private javax.swing.JTextField id;
-    private javax.swing.JTextField id1;
+    public javax.swing.JTextField id2;
     private javax.swing.JButton jButton1;
+    private javax.swing.JButton jButton10;
+    private javax.swing.JButton jButton11;
     private javax.swing.JButton jButton2;
     private javax.swing.JButton jButton27;
     private javax.swing.JButton jButton28;
-    private javax.swing.JButton jButton29;
     private javax.swing.JButton jButton3;
-    private javax.swing.JButton jButton30;
-    private javax.swing.JButton jButton5;
-    private javax.swing.JButton jButton6;
+    private javax.swing.JButton jButton4;
+    private javax.swing.JButton jButton7;
+    private javax.swing.JButton jButton8;
+    private javax.swing.JLabel jLabel10;
+    private javax.swing.JLabel jLabel11;
     private javax.swing.JLabel jLabel15;
-    private javax.swing.JLabel jLabel16;
+    private javax.swing.JLabel jLabel17;
     private javax.swing.JLabel jLabel18;
     private javax.swing.JLabel jLabel19;
     private javax.swing.JLabel jLabel20;
     private javax.swing.JLabel jLabel21;
     private javax.swing.JLabel jLabel22;
     private javax.swing.JLabel jLabel23;
-    private javax.swing.JLabel jLabel24;
-    private javax.swing.JLabel jLabel25;
-    private javax.swing.JLabel jLabel26;
-    private javax.swing.JLabel jLabel27;
-    private javax.swing.JLabel jLabel28;
-    private javax.swing.JLabel jLabel29;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
@@ -664,24 +909,26 @@ public class UserDashboard extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
+    private javax.swing.JPanel jPanel4;
+    private javax.swing.JPanel jPanel5;
+    private javax.swing.JPanel jPanel6;
     private javax.swing.JPanel jPanel7;
-    private javax.swing.JPanel jPanel8;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JTabbedPane jTabbedPane1;
     private javax.swing.JComboBox<String> method;
-    private javax.swing.JComboBox<String> method1;
     private javax.swing.JTextField name;
-    private javax.swing.JTextField name1;
+    private javax.swing.JPasswordField newPassword;
+    private javax.swing.JPasswordField oldPassword;
+    public javax.swing.JLabel pic;
     private javax.swing.JTextField price;
-    private javax.swing.JTextField price1;
     private javax.swing.JLabel productImage;
-    private javax.swing.JLabel productImage1;
     private javax.swing.JTable products;
     private javax.swing.JSpinner quantity;
-    private javax.swing.JSpinner quantity1;
+    private javax.swing.JButton remove;
+    private javax.swing.JButton select;
+    private javax.swing.JCheckBox showPass;
     private javax.swing.JTextField status;
-    private javax.swing.JTextField status1;
     private javax.swing.JTextField stocks;
-    private javax.swing.JTextField stocks1;
+    public javax.swing.JTextField username;
     // End of variables declaration//GEN-END:variables
 }

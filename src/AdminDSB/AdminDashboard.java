@@ -36,6 +36,7 @@ public class AdminDashboard extends javax.swing.JFrame {
         displayProducts();
         pendingorders();
         activeOrders();
+        deliveredProducts();
         jButton21.setEnabled(false);
     }
 
@@ -43,6 +44,15 @@ public class AdminDashboard extends javax.swing.JFrame {
         try {
             ResultSet rs = new DBConnector().getData("select * from orders where o_approve = 'True'");
             orders1.setModel(DbUtils.resultSetToTableModel(rs));
+        } catch (SQLException e) {
+            System.err.println("An error occurred while fetching data: " + e.getMessage());
+        }
+    }
+
+    private void deliveredProducts() {
+        try {
+            ResultSet rs = new DBConnector().getData("select * from orders where o_approve = 'Delivered'");
+            delivered.setModel(DbUtils.resultSetToTableModel(rs));
         } catch (SQLException e) {
             System.err.println("An error occurred while fetching data: " + e.getMessage());
         }
@@ -99,6 +109,7 @@ public class AdminDashboard extends javax.swing.JFrame {
                 displayProducts();
                 pendingorders();
                 activeOrders();
+                deliveredProducts();
                 jTabbedPane1.setSelectedIndex(1);
 
             } catch (SQLException ex) {
@@ -130,6 +141,7 @@ public class AdminDashboard extends javax.swing.JFrame {
                 displayProducts();
                 pendingorders();
                 activeOrders();
+                deliveredProducts();
                 jTabbedPane1.setSelectedIndex(1);
 
             } catch (SQLException ex) {
@@ -154,6 +166,7 @@ public class AdminDashboard extends javax.swing.JFrame {
                 displayProducts();
                 pendingorders();
                 activeOrders();
+                deliveredProducts();
                 jTabbedPane1.setSelectedIndex(1);
             }
         }
@@ -188,6 +201,7 @@ public class AdminDashboard extends javax.swing.JFrame {
                     displayProducts();
                     pendingorders();
                     activeOrders();
+                    deliveredProducts();
                     jTabbedPane1.setSelectedIndex(1);
 
                     pname1.setText("");
@@ -228,6 +242,7 @@ public class AdminDashboard extends javax.swing.JFrame {
                 displayProducts();
                 pendingorders();
                 activeOrders();
+                deliveredProducts();
                 jTabbedPane1.setSelectedIndex(1);
 
                 pn.setText("");
@@ -294,6 +309,7 @@ public class AdminDashboard extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        jPanel1 = new javax.swing.JPanel();
         jTabbedPane1 = new javax.swing.JTabbedPane();
         jPanel2 = new javax.swing.JPanel();
         jScrollPane2 = new javax.swing.JScrollPane();
@@ -311,6 +327,7 @@ public class AdminDashboard extends javax.swing.JFrame {
         jPanel3 = new javax.swing.JPanel();
         jScrollPane3 = new javax.swing.JScrollPane();
         productsTB = new javax.swing.JTable();
+        jButton8 = new javax.swing.JButton();
         jButton6 = new javax.swing.JButton();
         aname2 = new javax.swing.JLabel();
         jButton3 = new javax.swing.JButton();
@@ -376,6 +393,14 @@ public class AdminDashboard extends javax.swing.JFrame {
         jLabel25 = new javax.swing.JLabel();
         jButton35 = new javax.swing.JButton();
         jButton34 = new javax.swing.JButton();
+        jPanel10 = new javax.swing.JPanel();
+        aname7 = new javax.swing.JLabel();
+        jLabel26 = new javax.swing.JLabel();
+        jScrollPane5 = new javax.swing.JScrollPane();
+        delivered = new javax.swing.JTable();
+        jLabel27 = new javax.swing.JLabel();
+        jButton37 = new javax.swing.JButton();
+        jButton38 = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setMinimumSize(new java.awt.Dimension(1098, 699));
@@ -388,6 +413,9 @@ public class AdminDashboard extends javax.swing.JFrame {
             }
         });
         getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        jPanel1.setBackground(new java.awt.Color(255, 255, 255));
+        getContentPane().add(jPanel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, -20, 1100, 50));
 
         jPanel2.setBackground(new java.awt.Color(255, 255, 255));
         jPanel2.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
@@ -502,6 +530,15 @@ public class AdminDashboard extends javax.swing.JFrame {
         jScrollPane3.setViewportView(productsTB);
 
         jPanel3.add(jScrollPane3, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 180, 1040, 470));
+
+        jButton8.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
+        jButton8.setText("DELIVERED");
+        jButton8.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton8ActionPerformed(evt);
+            }
+        });
+        jPanel3.add(jButton8, new org.netbeans.lib.awtextra.AbsoluteConstraints(400, 140, 120, 30));
 
         jButton6.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
         jButton6.setText("PRINT");
@@ -901,6 +938,55 @@ public class AdminDashboard extends javax.swing.JFrame {
 
         jTabbedPane1.addTab("tab1", jPanel9);
 
+        jPanel10.setBackground(new java.awt.Color(255, 255, 255));
+        jPanel10.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        aname7.setFont(new java.awt.Font("Yu Gothic", 1, 18)); // NOI18N
+        aname7.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Images/icons8-admin-80.png"))); // NOI18N
+        aname7.setText("ADMINS NAME");
+        jPanel10.add(aname7, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 40, 230, -1));
+
+        jLabel26.setFont(new java.awt.Font("Yu Gothic", 1, 18)); // NOI18N
+        jLabel26.setText("ADMINS DASHBOARD");
+        jPanel10.add(jLabel26, new org.netbeans.lib.awtextra.AbsoluteConstraints(520, 90, 210, 30));
+
+        delivered.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+
+            },
+            new String [] {
+
+            }
+        ));
+        jScrollPane5.setViewportView(delivered);
+
+        jPanel10.add(jScrollPane5, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 150, 1030, 440));
+
+        jLabel27.setFont(new java.awt.Font("Yu Gothic", 1, 18)); // NOI18N
+        jLabel27.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Images/samot.png"))); // NOI18N
+        jLabel27.setText("ADMINS DASHBOARD");
+        jPanel10.add(jLabel27, new org.netbeans.lib.awtextra.AbsoluteConstraints(310, 30, 470, 150));
+
+        jButton37.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
+        jButton37.setText("BACK");
+        jButton37.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton37ActionPerformed(evt);
+            }
+        });
+        jPanel10.add(jButton37, new org.netbeans.lib.awtextra.AbsoluteConstraints(950, 600, 110, -1));
+
+        jButton38.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
+        jButton38.setText("PRINT");
+        jButton38.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton38ActionPerformed(evt);
+            }
+        });
+        jPanel10.add(jButton38, new org.netbeans.lib.awtextra.AbsoluteConstraints(950, 110, 110, -1));
+
+        jTabbedPane1.addTab("tab1", jPanel10);
+
         getContentPane().add(jTabbedPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 1100, 700));
 
         pack();
@@ -1069,7 +1155,7 @@ public class AdminDashboard extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton3ActionPerformed
 
     private void jButton6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton6ActionPerformed
-        MessageFormat header = new MessageFormat("Total Accounts Registered Reports");
+        MessageFormat header = new MessageFormat("Total Products Registered Reports");
         MessageFormat footer = new MessageFormat("Page{0,number,integer}");
         try {
             productsTB.print(JTable.PrintMode.FIT_WIDTH, header, footer);
@@ -1200,7 +1286,7 @@ public class AdminDashboard extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void jButton32ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton32ActionPerformed
-        MessageFormat header = new MessageFormat("Total Accounts Registered Reports");
+        MessageFormat header = new MessageFormat("Total Pending Orders Reports");
         MessageFormat footer = new MessageFormat("Page{0,number,integer}");
         try {
             pendingOrders.print(JTable.PrintMode.FIT_WIDTH, header, footer);
@@ -1210,7 +1296,7 @@ public class AdminDashboard extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton32ActionPerformed
 
     private void jButton34ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton34ActionPerformed
-        MessageFormat header = new MessageFormat("Total Accounts Registered Reports");
+        MessageFormat header = new MessageFormat("Total Ongoing Delivery Reports");
         MessageFormat footer = new MessageFormat("Page{0,number,integer}");
         try {
             orders1.print(JTable.PrintMode.FIT_WIDTH, header, footer);
@@ -1218,6 +1304,24 @@ public class AdminDashboard extends javax.swing.JFrame {
             System.out.println("" + er.getMessage());
         }
     }//GEN-LAST:event_jButton34ActionPerformed
+
+    private void jButton37ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton37ActionPerformed
+        jTabbedPane1.setSelectedIndex(1);
+    }//GEN-LAST:event_jButton37ActionPerformed
+
+    private void jButton38ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton38ActionPerformed
+        MessageFormat header = new MessageFormat("Total Success Delivery Reports");
+        MessageFormat footer = new MessageFormat("Page{0,number,integer}");
+        try {
+            delivered.print(JTable.PrintMode.FIT_WIDTH, header, footer);
+        } catch (PrinterException er) {
+            System.out.println("" + er.getMessage());
+        }
+    }//GEN-LAST:event_jButton38ActionPerformed
+
+    private void jButton8ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton8ActionPerformed
+        jTabbedPane1.setSelectedIndex(6);
+    }//GEN-LAST:event_jButton8ActionPerformed
 
     public static void main(String args[]) {
 
@@ -1235,6 +1339,8 @@ public class AdminDashboard extends javax.swing.JFrame {
     private javax.swing.JLabel aname4;
     private javax.swing.JLabel aname5;
     private javax.swing.JLabel aname6;
+    private javax.swing.JLabel aname7;
+    private javax.swing.JTable delivered;
     private javax.swing.JLabel icon1;
     private javax.swing.JLabel icon2;
     private javax.swing.JTextField id;
@@ -1259,10 +1365,13 @@ public class AdminDashboard extends javax.swing.JFrame {
     private javax.swing.JButton jButton33;
     private javax.swing.JButton jButton34;
     private javax.swing.JButton jButton35;
+    private javax.swing.JButton jButton37;
+    private javax.swing.JButton jButton38;
     private javax.swing.JButton jButton4;
     private javax.swing.JButton jButton5;
     private javax.swing.JButton jButton6;
     private javax.swing.JButton jButton7;
+    private javax.swing.JButton jButton8;
     private javax.swing.JButton jButton9;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel11;
@@ -1279,11 +1388,15 @@ public class AdminDashboard extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel23;
     private javax.swing.JLabel jLabel24;
     private javax.swing.JLabel jLabel25;
+    private javax.swing.JLabel jLabel26;
+    private javax.swing.JLabel jLabel27;
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
     private javax.swing.JLabel jLabel7;
     private javax.swing.JLabel jLabel8;
     private javax.swing.JLabel jLabel9;
+    private javax.swing.JPanel jPanel1;
+    private javax.swing.JPanel jPanel10;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanel4;
@@ -1296,6 +1409,7 @@ public class AdminDashboard extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JScrollPane jScrollPane4;
+    private javax.swing.JScrollPane jScrollPane5;
     private javax.swing.JTabbedPane jTabbedPane1;
     private javax.swing.JTable orders1;
     private javax.swing.JTable pendingOrders;
