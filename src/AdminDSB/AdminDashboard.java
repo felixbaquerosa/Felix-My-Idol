@@ -171,13 +171,17 @@ public class AdminDashboard extends javax.swing.JFrame {
             } else if (destination == null || destination.isEmpty()) {
                 JOptionPane.showMessageDialog(null, "PLEASE INSERT AN IMAGE FIRST!");
             } else {
-                DBConnector cn = new DBConnector();
-                cn.insertData("insert into products (p_name, p_price, p_stocks, p_status, p_image) "
-                        + "values ('" + xpname + "', '" + xpprice + "', '"
-                        + xpstocks + "', '" + xpstatus + "', '" + destination + "')");
+                try {
+                    int price = Integer.parseInt(xpprice);
+                    int stocks = Integer.parseInt(xpstocks);
+                    DBConnector cn = new DBConnector();
+                    cn.insertData("insert into products (p_name, p_price, p_stocks, p_status, p_image) "
+                            + "values ('" + xpname + "', '" + price + "', '"
+                            + stocks + "', '" + xpstatus + "', '" + destination + "')");
 
-                if (destination != null && path != null) {
-                    Files.copy(selectedFile.toPath(), new File(destination).toPath(), StandardCopyOption.REPLACE_EXISTING);
+                    if (destination != null && path != null) {
+                        Files.copy(selectedFile.toPath(), new File(destination).toPath(), StandardCopyOption.REPLACE_EXISTING);
+                    }
 
                     JOptionPane.showMessageDialog(this, "PRODUCT CREATED SUCCESSFULLY!");
                     displayUsers();
@@ -190,8 +194,8 @@ public class AdminDashboard extends javax.swing.JFrame {
                     pprice1.setText("");
                     pstocks1.setText("");
                     icon1.setIcon(null);
-                } else {
-                    JOptionPane.showMessageDialog(null, "PLEASE INSERT AN IMAGE FIRST!");
+                } catch (NumberFormatException e) {
+                    JOptionPane.showMessageDialog(this, "Price and stocks should be integers!");
                 }
             }
         } catch (SQLException | IOException ex) {
@@ -209,33 +213,30 @@ public class AdminDashboard extends javax.swing.JFrame {
 
             if (xpname1.isEmpty() || xpprice1.isEmpty() || xpstocks1.isEmpty() || xpstatus1.isEmpty()) {
                 JOptionPane.showMessageDialog(null, "PLEASE FILL ALL THE FIELDS!");
-            } else if (destination == null || destination.isEmpty()) {
+            } else if (selectedFile == null && icon2.getIcon() == null) {
                 JOptionPane.showMessageDialog(null, "PLEASE INSERT AN IMAGE FIRST!");
             } else {
                 DBConnector cn = new DBConnector();
                 cn.updateData("update products set p_name = '" + xpname1 + "', p_price = '" + xpprice1 + "',p_stocks='" + xpstocks1 + "', "
                         + "p_status='" + xpstatus1 + "', p_image= '" + destination + "' where p_id = '" + id.getText() + "'");
 
-                if (destination != null && path != null) {
+                if (selectedFile != null) {
                     Files.copy(selectedFile.toPath(), new File(destination).toPath(), StandardCopyOption.REPLACE_EXISTING);
-
-                    JOptionPane.showMessageDialog(this, "PRODUCT CREATED SUCCESSFULLY!");
-                    displayUsers();
-                    displayProducts();
-                    pendingorders();
-                    activeOrders();
-                    jTabbedPane1.setSelectedIndex(1);
-
-                    pn.setText("");
-                    pp.setText("");
-                    ps.setText("");
-                    icon2.setIcon(null);
-                } else {
-                    JOptionPane.showMessageDialog(null, "PLEASE INSERT AN IMAGE FIRST!");
                 }
+                JOptionPane.showMessageDialog(this, "PRODUCT UPDATED SUCCESSFULLY!");
+                displayUsers();
+                displayProducts();
+                pendingorders();
+                activeOrders();
+                jTabbedPane1.setSelectedIndex(1);
+
+                pn.setText("");
+                pp.setText("");
+                ps.setText("");
+                icon2.setIcon(null);
             }
         } catch (SQLException | IOException ex) {
-            JOptionPane.showMessageDialog(this, "Error creating product!");
+            JOptionPane.showMessageDialog(this, "Error updating product!");
             System.out.println(ex.getMessage());
         }
     }
@@ -1141,8 +1142,55 @@ public class AdminDashboard extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton9ActionPerformed
 
     private void jButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton5ActionPerformed
-        new myAccount().setVisible(true);
-        dispose();
+        try {
+            Session sess = Session.getInstance();
+            if (sess == null || sess.getId() == null) {
+                JOptionPane.showMessageDialog(null, "Please Login First!");
+                LoginDashboard ld = new LoginDashboard();
+                ld.setVisible(true);
+                dispose();
+            }
+
+            String query = "SELECT * FROM inventory WHERE id = ?";
+            try (PreparedStatement pstmt = new DBConnector().getConnection().prepareStatement(query)) {
+                pstmt.setString(1, sess.getId());
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    if (rs.next()) {
+                        myAccount ma = new myAccount();
+                        ma.id.setText(rs.getString("id"));
+                        ma.email.setText(rs.getString("email"));
+                        ma.username.setText(rs.getString("username"));
+                        ma.contact.setText(rs.getString("contact"));
+                        ma.status.setSelectedItem(rs.getString("status"));
+                        ma.type.setSelectedItem(rs.getString("type"));
+                        String imagePath = rs.getString("Image");
+
+                        SwingUtilities.invokeLater(() -> {
+                            ma.setVisible(true);
+                            dispose();
+                        });
+
+                        if (imagePath != null && !imagePath.isEmpty()) {
+                            ma.imagee.setIcon(ResizeImage(imagePath, null, ma.imagee));
+                            ma.oldPath = imagePath;
+                            ma.path = imagePath;
+                            ma.destination = imagePath;
+                            select.setEnabled(false);
+                            remove.setEnabled(true);
+                        } else {
+                            select.setEnabled(true);
+                            remove.setEnabled(false);
+                        }
+                    } else {
+                        System.out.println("No data found for id: " + sess.getId());
+                    }
+                }
+            }
+        } catch (SQLException er) {
+            System.out.println("ERROR: " + er.getMessage());
+        } catch (Exception e) {
+            System.out.println("Unexpected ERROR: " + e.getMessage());
+        }
     }//GEN-LAST:event_jButton5ActionPerformed
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
