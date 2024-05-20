@@ -1224,7 +1224,55 @@ public class AdminDashboard extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton7ActionPerformed
 
     private void jButton9ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton9ActionPerformed
+        try {
+            Session sess = Session.getInstance();
+            if (sess == null || sess.getId() == null) {
+                JOptionPane.showMessageDialog(null, "Please Login First!");
+                LoginDashboard ld = new LoginDashboard();
+                ld.setVisible(true);
+                dispose();
+            }
 
+            String query = "SELECT * FROM inventory WHERE id = ?";
+            try (PreparedStatement pstmt = new DBConnector().getConnection().prepareStatement(query)) {
+                pstmt.setString(1, sess.getId());
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    if (rs.next()) {
+                        editAccount ea = new editAccount();
+                        ea.id.setText(rs.getString("id"));
+                        ea.email.setText(rs.getString("email"));
+                        ea.username.setText(rs.getString("username"));
+                        ea.contact.setText(rs.getString("contact"));
+                        ea.status.setSelectedItem(rs.getString("status"));
+                        ea.type.setSelectedItem(rs.getString("type"));
+                        String imagePath = rs.getString("Image");
+
+                        SwingUtilities.invokeLater(() -> {
+                            ea.setVisible(true);
+                            dispose();
+                        });
+
+                        if (imagePath != null && !imagePath.isEmpty()) {
+                            ea.icon1.setIcon(ResizeImage(imagePath, null, ea.icon1));
+                            ea.oldPath = imagePath;
+                            ea.path = imagePath;
+                            ea.destination = imagePath;
+                            select.setEnabled(false);
+                            remove.setEnabled(true);
+                        } else {
+                            select.setEnabled(true);
+                            remove.setEnabled(false);
+                        }
+                    } else {
+                        System.out.println("No data found for id: " + sess.getId());
+                    }
+                }
+            }
+        } catch (SQLException er) {
+            System.out.println("ERROR: " + er.getMessage());
+        } catch (Exception e) {
+            System.out.println("Unexpected ERROR: " + e.getMessage());
+        }
     }//GEN-LAST:event_jButton9ActionPerformed
 
     private void jButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton5ActionPerformed

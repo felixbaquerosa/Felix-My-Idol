@@ -2,13 +2,36 @@ package AdminDSB;
 
 import Config.DBConnector;
 import Config.passwordHashing;
+import java.awt.Image;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.security.NoSuchAlgorithmException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.regex.Pattern;
+import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
+import javax.swing.JFileChooser;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import static javax.swing.JOptionPane.INFORMATION_MESSAGE;
 
 public class createAccounts extends javax.swing.JFrame {
+
+    public File selectedFile;
+    public String path2 = null;
+    public String destination = "";
+    public String oldPath;
+    public String path;
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
+    private static final Pattern CONTACT_PATTERN = Pattern.compile("^[0-9]{11}$");
 
     public createAccounts() {
         initComponents();
@@ -33,15 +56,71 @@ public class createAccounts extends javax.swing.JFrame {
         }
     }
 
+    public static int getHeightFromWidth(String imagePath, int desiredWidth) {
+        try {
+            File imageFile = new File(imagePath);
+            BufferedImage image = ImageIO.read(imageFile);
+
+            int originalWidth = image.getWidth();
+            int originalHeight = image.getHeight();
+
+            int newHeight = (int) ((double) desiredWidth / originalWidth * originalHeight);
+
+            return newHeight;
+        } catch (IOException ex) {
+            System.out.println("No image found!");
+        }
+
+        return -1;
+    }
+
+    private ImageIcon ResizeImage(String ImagePath, byte[] pic, JLabel label) {
+        ImageIcon MyImage = null;
+        if (ImagePath != null) {
+            MyImage = new ImageIcon(ImagePath);
+        } else {
+            MyImage = new ImageIcon(pic);
+        }
+
+        int newHeight = getHeightFromWidth(ImagePath, label.getWidth());
+
+        Image img = MyImage.getImage();
+        Image newImg = img.getScaledInstance(label.getWidth(), newHeight, Image.SCALE_SMOOTH);
+        ImageIcon image = new ImageIcon(newImg);
+        return image;
+    }
+
+    private int FileExistenceChecker(String path) {
+        File file = new File(path);
+        String fileName = file.getName();
+
+        Path filePath = Paths.get("src/ImageDB", fileName);
+        boolean fileExists = Files.exists(filePath);
+
+        if (fileExists) {
+            return 1;
+        } else {
+            return 0;
+        }
+
+    }
+
     private boolean validationChecker() {
-        if (username.getText().isEmpty() || password.getText().isEmpty() || email.getText().isEmpty() || contact.getText().isEmpty()) {
-            errorMessage("FILL ALL THE REQUIREMENTS!");
+
+        if (email.getText().isEmpty() || !EMAIL_PATTERN.matcher(email.getText()).matches()) {
+            JOptionPane.showMessageDialog(this, "Invalid email address!");
             return false;
-        } else if (password.getText().length() < 8) {
-            errorMessage("PASSWORD MUST BE AT LEAST 8 CHARACTERS!");
+        } else if (contact.getText().isEmpty() || !CONTACT_PATTERN.matcher(contact.getText()).matches()) {
+            JOptionPane.showMessageDialog(this, "Invalid contact number! Must be 11 digits.");
+            return false;
+        } else if (username.getText().isEmpty() || email.getText().isEmpty() || contact.getText().isEmpty()) {
+            errorMessage("FILL ALL THE REQUIREMENTS!");
             return false;
         } else if (!contact.getText().matches("\\d+")) {
             errorMessage("CONTACT MUST CONTAIN ONLY DIGITS!");
+            return false;
+        } else if (selectedFile == null && icon1.getIcon() == null) {
+            errorMessage("PLEASE INSERT AN IMAGE FIRST!");
             return false;
         } else {
             return true;
@@ -60,12 +139,6 @@ public class createAccounts extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jPanel1 = new javax.swing.JPanel();
-        jLabel15 = new javax.swing.JLabel();
-        email = new javax.swing.JTextField();
-        username = new javax.swing.JTextField();
-        contact = new javax.swing.JTextField();
-        jLabel16 = new javax.swing.JLabel();
         jPanel2 = new javax.swing.JPanel();
         jLabel17 = new javax.swing.JLabel();
         jButton1 = new javax.swing.JButton();
@@ -74,51 +147,20 @@ public class createAccounts extends javax.swing.JFrame {
         status = new javax.swing.JComboBox<>();
         showPass = new javax.swing.JCheckBox();
         password = new javax.swing.JPasswordField();
+        jLabel16 = new javax.swing.JLabel();
+        email = new javax.swing.JTextField();
+        username = new javax.swing.JTextField();
+        contact = new javax.swing.JTextField();
+        select = new javax.swing.JButton();
+        remove = new javax.swing.JButton();
+        jPanel5 = new javax.swing.JPanel();
+        icon1 = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setUndecorated(true);
-        setPreferredSize(new java.awt.Dimension(320, 480));
+        setPreferredSize(new java.awt.Dimension(600, 480));
+        setResizable(false);
         getContentPane().setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
-
-        jPanel1.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
-
-        jLabel15.setFont(new java.awt.Font("Yu Gothic", 1, 18)); // NOI18N
-        jLabel15.setText("SEARCH");
-        jPanel1.add(jLabel15, new org.netbeans.lib.awtextra.AbsoluteConstraints(840, 90, 90, -1));
-
-        email.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
-        email.setHorizontalAlignment(javax.swing.JTextField.CENTER);
-        email.setText("EMAIL ");
-        email.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                emailMouseClicked(evt);
-            }
-        });
-        jPanel1.add(email, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 120, 240, -1));
-
-        username.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
-        username.setHorizontalAlignment(javax.swing.JTextField.CENTER);
-        username.setText("USERNAME");
-        username.addFocusListener(new java.awt.event.FocusAdapter() {
-            public void focusGained(java.awt.event.FocusEvent evt) {
-                usernameFocusGained(evt);
-            }
-        });
-        jPanel1.add(username, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 160, 240, -1));
-
-        contact.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
-        contact.setHorizontalAlignment(javax.swing.JTextField.CENTER);
-        contact.setText("CONTACT#\n");
-        contact.addFocusListener(new java.awt.event.FocusAdapter() {
-            public void focusGained(java.awt.event.FocusEvent evt) {
-                contactFocusGained(evt);
-            }
-        });
-        jPanel1.add(contact, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 240, 240, -1));
-
-        jLabel16.setFont(new java.awt.Font("Yu Gothic", 1, 10)); // NOI18N
-        jLabel16.setText("PLEASE DOUBLE CHECK DETAILS UPON CONFIRMING!");
-        jPanel1.add(jLabel16, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 60, 290, 40));
 
         jPanel2.setBackground(new java.awt.Color(255, 255, 255));
         jPanel2.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
@@ -184,9 +226,64 @@ public class createAccounts extends javax.swing.JFrame {
         });
         jPanel2.add(password, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 200, 240, 30));
 
-        jPanel1.add(jPanel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 320, 480));
+        jLabel16.setFont(new java.awt.Font("Yu Gothic", 1, 10)); // NOI18N
+        jLabel16.setText("PLEASE DOUBLE CHECK DETAILS UPON CONFIRMING!");
+        jPanel2.add(jLabel16, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 60, 290, 40));
 
-        getContentPane().add(jPanel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 320, 490));
+        email.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
+        email.setHorizontalAlignment(javax.swing.JTextField.CENTER);
+        email.setText("EMAIL ");
+        email.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                emailMouseClicked(evt);
+            }
+        });
+        jPanel2.add(email, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 120, 240, -1));
+
+        username.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
+        username.setHorizontalAlignment(javax.swing.JTextField.CENTER);
+        username.setText("USERNAME");
+        username.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                usernameFocusGained(evt);
+            }
+        });
+        jPanel2.add(username, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 160, 240, -1));
+
+        contact.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
+        contact.setHorizontalAlignment(javax.swing.JTextField.CENTER);
+        contact.setText("CONTACT#\n");
+        contact.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                contactFocusGained(evt);
+            }
+        });
+        jPanel2.add(contact, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 240, 240, -1));
+
+        select.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
+        select.setText("SELECT");
+        select.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                selectActionPerformed(evt);
+            }
+        });
+        jPanel2.add(select, new org.netbeans.lib.awtextra.AbsoluteConstraints(310, 310, 260, -1));
+
+        remove.setFont(new java.awt.Font("Yu Gothic", 0, 11)); // NOI18N
+        remove.setText("REMOVE");
+        remove.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                removeActionPerformed(evt);
+            }
+        });
+        jPanel2.add(remove, new org.netbeans.lib.awtextra.AbsoluteConstraints(310, 350, 260, -1));
+
+        jPanel5.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+        jPanel5.add(icon1, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 10, 240, 200));
+
+        jPanel2.add(jPanel5, new org.netbeans.lib.awtextra.AbsoluteConstraints(310, 80, 260, 220));
+
+        getContentPane().add(jPanel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 600, 480));
 
         pack();
         setLocationRelativeTo(null);
@@ -218,9 +315,13 @@ public class createAccounts extends javax.swing.JFrame {
             } else if (!validationChecker()) {
             } else {
                 String pass = passwordHashing.hashPassword(password.getText());
-                new DBConnector().insertData("insert into inventory (email,username,password,contact,type,status) "
+                new DBConnector().insertData("insert into inventory (email,username,password,contact,type,status,Image) "
                         + "values ('" + email.getText() + "','" + username.getText() + "', '" + pass + "'"
-                        + ",'" + contact.getText() + "','" + type.getSelectedItem() + "', '" + status.getSelectedItem() + "')");
+                        + ",'" + contact.getText() + "','" + type.getSelectedItem() + "', '" + status.getSelectedItem() + "', '" + destination + "')");
+
+                if (destination != null) {
+                    Files.copy(selectedFile.toPath(), new File(destination).toPath(), StandardCopyOption.REPLACE_EXISTING);
+                }
 
                 JOptionPane.showMessageDialog(this, "REGISTRATION SUCCESSFULL!", "SUCCESS", INFORMATION_MESSAGE);
 
@@ -231,6 +332,8 @@ public class createAccounts extends javax.swing.JFrame {
             System.out.println("Eror: " + er.getMessage());
         } catch (NoSuchAlgorithmException ex) {
             System.out.println("Error: " + ex.getMessage());
+        } catch (IOException ex) {
+            Logger.getLogger(createAccounts.class.getName()).log(Level.SEVERE, null, ex);
         }
     }//GEN-LAST:event_jButton2ActionPerformed
 
@@ -246,6 +349,38 @@ public class createAccounts extends javax.swing.JFrame {
     private void passwordFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_passwordFocusGained
         password.setText("");
     }//GEN-LAST:event_passwordFocusGained
+
+    private void selectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_selectActionPerformed
+        JFileChooser fileChooser = new JFileChooser();
+        int returnValue = fileChooser.showOpenDialog(null);
+        if (returnValue == JFileChooser.APPROVE_OPTION) {
+            try {
+                selectedFile = fileChooser.getSelectedFile();
+                destination = "src/ImageDB/" + selectedFile.getName();
+                path = selectedFile.getAbsolutePath();
+
+                if (FileExistenceChecker(path) == 1) {
+                    JOptionPane.showMessageDialog(null, "File Already Exist, Rename or Choose another!");
+                    destination = "";
+                    path = "";
+                } else {
+                    icon1.setIcon(ResizeImage(path, null, icon1));
+                    remove.setEnabled(true);
+                    select.setEnabled(false);
+                }
+            } catch (Exception ex) {
+                System.out.println("File Error!");
+            }
+        }
+    }//GEN-LAST:event_selectActionPerformed
+
+    private void removeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_removeActionPerformed
+        destination = "";
+        icon1.setIcon(null);
+        path = "";
+        select.setEnabled(true);
+        remove.setEnabled(false);
+    }//GEN-LAST:event_removeActionPerformed
     public static void main(String args[]) {
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
@@ -257,14 +392,16 @@ public class createAccounts extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTextField contact;
     private javax.swing.JTextField email;
+    private javax.swing.JLabel icon1;
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
-    private javax.swing.JLabel jLabel15;
     private javax.swing.JLabel jLabel16;
     private javax.swing.JLabel jLabel17;
-    private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
+    private javax.swing.JPanel jPanel5;
     public javax.swing.JPasswordField password;
+    private javax.swing.JButton remove;
+    private javax.swing.JButton select;
     private javax.swing.JCheckBox showPass;
     public javax.swing.JComboBox<String> status;
     private javax.swing.JComboBox<String> type;
